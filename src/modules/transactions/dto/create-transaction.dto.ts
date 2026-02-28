@@ -9,6 +9,10 @@ import {
 export class CreateTransactionDto {
   @IsString()
   @MaxLength(64)
+  userId: string;
+
+  @IsString()
+  @MaxLength(64)
   hash: string;
 
   @IsString()

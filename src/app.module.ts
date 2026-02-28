@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { WalletModule } from './modules/wallet/wallet.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { databaseConfig } from './config/database.config';
 
 @Module({
@@ -11,6 +12,7 @@ import { databaseConfig } from './config/database.config';
     UsersModule,
     TransactionsModule,
     WalletModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
