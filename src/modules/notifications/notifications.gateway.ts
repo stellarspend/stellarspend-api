@@ -6,7 +6,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { verify, JwtPayload } from 'jsonwebtoken';
+import { verify, type JwtPayload } from 'jsonwebtoken';
 import { Server, Socket } from 'socket.io';
 
 type BalanceUpdatedEvent = {
@@ -27,7 +27,7 @@ export class NotificationsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server!: Server;
+  server!: Server<any, any>;
 
   private readonly logger = new Logger(NotificationsGateway.name);
 
@@ -48,8 +48,8 @@ export class NotificationsGateway
       return;
     }
 
-    client.data.userId = userId;
-    client.join(this.userRoom(userId));
+    (client.data as { userId?: string }).userId = userId;
+    void client.join(this.userRoom(userId));
     this.logger.log(`Socket ${client.id} connected for user ${userId}`);
   }
 
@@ -66,7 +66,7 @@ export class NotificationsGateway
   }
 
   private extractToken(client: Socket): string | null {
-    const authToken = client.handshake.auth?.token;
+    const authToken = client.handshake.auth?.token as string | undefined;
 
     if (typeof authToken === 'string' && authToken.trim().length > 0) {
       return authToken;
@@ -97,7 +97,10 @@ export class NotificationsGateway
       }
 
       return this.userIdFromPayload(decoded);
-    } catch {
+    } catch (err: unknown) {
+      this.logger.debug(
+        `Token verification failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
       return null;
     }
   }
@@ -107,7 +110,7 @@ export class NotificationsGateway
       return payload.sub;
     }
 
-    const userId = payload.userId;
+    const userId = payload.userId as string | undefined;
     if (typeof userId === 'string' && userId.trim().length > 0) {
       return userId;
     }
