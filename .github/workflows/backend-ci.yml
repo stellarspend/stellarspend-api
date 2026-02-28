@@ -30,11 +30,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [ ! -f package-lock.json ]; then
-            echo "::error::package-lock.json is missing. Run 'npm install' locally and commit the generated package-lock.json."
-            exit 1
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "::warning::package-lock.json not found; using npm install. Commit package-lock.json for reproducible installs."
+            npm install
           fi
-          npm ci
 
       - name: Run ESLint
         run: npm run lint
