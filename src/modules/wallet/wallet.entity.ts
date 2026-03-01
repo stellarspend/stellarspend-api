@@ -11,6 +11,6 @@ export class Wallet {
   @Column({ type: 'uuid' })
   userId: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 }
