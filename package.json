@@ -11,6 +11,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "test": "jest",
+    "ci": "npm run lint && npm test && npm run build",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:run": "npm run typeorm migration:run -- -d ormconfig.ts",
     "migration:revert": "npm run typeorm migration:revert -- -d ormconfig.ts",
