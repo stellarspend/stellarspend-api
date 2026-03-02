@@ -5,6 +5,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { databaseConfig } from './config/database.config';
 
 @Module({
@@ -15,6 +16,7 @@ import { databaseConfig } from './config/database.config';
     WalletModule,
     NotificationsModule,
     AnalyticsModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
