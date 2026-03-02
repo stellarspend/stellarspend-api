@@ -11,6 +11,10 @@ export class CreateTransactionDto {
   @ApiProperty({ example: 'abc123...', description: 'Stellar transaction hash', maxLength: 64 })
   @IsString()
   @MaxLength(64)
+  userId: string;
+
+  @IsString()
+  @MaxLength(64)
   hash: string;
 
   @ApiProperty({ example: 'GABC...', description: 'Stellar account public key', maxLength: 56 })

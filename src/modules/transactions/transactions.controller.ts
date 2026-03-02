@@ -8,17 +8,20 @@ import {
 } from '@nestjs/swagger';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { QueryTransactionsDto } from './dto/query-transactions.dto';
+import { TransactionsService } from './transactions.service';
 
 @ApiTags('transactions')
 @Controller('transactions')
 export class TransactionsController {
+  constructor(private readonly transactionsService: TransactionsService) {}
+
   @Post()
   @ApiOperation({ summary: 'Record a new Stellar transaction' })
   @ApiBody({ type: CreateTransactionDto })
   @ApiResponse({ status: 201, description: 'Transaction recorded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request body' })
   create(@Body() createTransactionDto: CreateTransactionDto) {
-    return { message: 'Transaction recorded', data: createTransactionDto };
+    return this.transactionsService.create(createTransactionDto);
   }
 
   @Get()
