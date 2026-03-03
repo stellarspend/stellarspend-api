@@ -1,4 +1,13 @@
-import { IsOptional, IsInt, Min, Max, IsString, IsIn } from 'class-validator';
+import {
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
+  IsString,
+  IsIn,
+  IsUUID,
+  IsDate,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QueryTransactionsDto {
@@ -19,4 +28,30 @@ export class QueryTransactionsDto {
   @IsString()
   @IsIn(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc' = 'desc';
+
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  assetCode?: string;
+
+  @IsOptional()
+  @IsString()
+  transactionType?: string;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  startDate?: Date;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  endDate?: Date;
 }

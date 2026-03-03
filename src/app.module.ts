@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { WalletModule } from './modules/wallet/wallet.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { databaseConfig } from './config/database.config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -34,6 +36,8 @@ class AuthAndWalletThrottlerGuard extends ThrottlerGuard {
     UsersModule,
     TransactionsModule,
     WalletModule,
+    NotificationsModule,
+    AnalyticsModule,
   ],
   providers: [
     {
