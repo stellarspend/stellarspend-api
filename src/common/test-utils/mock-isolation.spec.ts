@@ -155,7 +155,7 @@ describe('Mock Isolation and Reset Behavior', () => {
       // The jest.config.js should have restoreMocks: true
       
       const originalMethod = { fn: () => 'original' };
-      const spy = jest.spyOn(originalMethod, 'fn').mockReturnValue('mocked');
+      const _spy = jest.spyOn(originalMethod, 'fn').mockReturnValue('mocked');
       
       expect(originalMethod.fn()).toBe('mocked');
       

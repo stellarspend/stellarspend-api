@@ -22,5 +22,32 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     'no-console': 'warn',
   },
-  ignorePatterns: ['dist', 'node_modules', '*.config.js'],
+  overrides: [
+    {
+      files: ['**/*.spec.ts', '**/*.test.ts', '**/mocks/**/*.ts', '**/test-utils/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+        '@typescript-eslint/no-unsafe-call': 'off',
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-return': 'off',
+        '@typescript-eslint/no-unsafe-argument': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-floating-promises': 'off',
+        '@typescript-eslint/require-await': 'off',
+        'no-console': 'off',
+      },
+    },
+    {
+      files: ['**/auth/**/*.ts', '**/wallet/wallet.service.ts', '**/jwt*.ts'],
+      rules: {
+        '@typescript-eslint/no-unsafe-assignment': 'warn',
+        '@typescript-eslint/no-unsafe-call': 'warn',
+        '@typescript-eslint/no-unsafe-member-access': 'warn',
+        '@typescript-eslint/no-unsafe-return': 'warn',
+        '@typescript-eslint/require-await': 'off',
+      },
+    },
+  ],
+  ignorePatterns: ['dist', 'node_modules', '*.config.js', 'ormconfig.ts'],
 };

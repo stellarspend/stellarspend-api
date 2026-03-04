@@ -3,11 +3,12 @@
  * Handles business logic for user management with CRUD operations
  */
 
-import { User } from '../../common/test-utils/fixtures';
+import { User } from './user.entity';
 
 export interface UserRepository {
   find(): Promise<User[]>;
   findOne(id: string): Promise<User | null>;
+  findOneBy?(criteria: Partial<User>): Promise<User | null>;
   create(user: Partial<User>): Promise<User>;
   update(id: string, user: Partial<User>): Promise<User>;
   delete(id: string): Promise<boolean>;
@@ -24,6 +25,13 @@ export class NotFoundError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'NotFoundError';
+  }
+}
+
+export class ForbiddenError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ForbiddenError';
   }
 }
 
@@ -108,6 +116,63 @@ export class UsersService {
     }
     
     return this.repository.delete(id);
+  }
+
+  /**
+   * Suspends a user account
+   * @param id - User ID to suspend
+   * @param reason - Reason for suspension
+   * @returns Promise resolving to updated user
+   * @throws ValidationError if ID is invalid
+   * @throws NotFoundError if user doesn't exist
+   */
+  async suspend(id: string, reason?: string): Promise<User> {
+    this.validateId(id);
+    
+    const existingUser = await this.repository.findOne(id);
+    if (!existingUser) {
+      throw new NotFoundError(`User with ID ${id} not found`);
+    }
+
+    if (existingUser.isSuspended) {
+      throw new ForbiddenError(`User with ID ${id} is already suspended`);
+    }
+    
+    const updatedUser: Partial<User> = {
+      isSuspended: true,
+      suspensionReason: reason || null,
+      updatedAt: new Date()
+    };
+    
+    return this.repository.update(id, updatedUser);
+  }
+
+  /**
+   * Unsuspends a user account
+   * @param id - User ID to unsuspend
+   * @returns Promise resolving to updated user
+   * @throws ValidationError if ID is invalid
+   * @throws NotFoundError if user doesn't exist
+   */
+  async unsuspend(id: string): Promise<User> {
+    this.validateId(id);
+    
+    const existingUser = await this.repository.findOne(id);
+    if (!existingUser) {
+      throw new NotFoundError(`User with ID ${id} not found`);
+    }
+
+    if (!existingUser.isSuspended) {
+      throw new ForbiddenError(`User with ID ${id} is not suspended`);
+    }
+    
+    const updatedUser: Partial<User> = {
+      isSuspended: false,
+      suspensionReason: null,
+      updatedAt: new Date()
+    };
+    
+    return this.repository.update(id, updatedUser);
   }
 
   /**
