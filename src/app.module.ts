@@ -1,4 +1,6 @@
 import { Injectable, Module, ExecutionContext } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
+
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
@@ -25,6 +27,7 @@ class AuthAndWalletThrottlerGuard extends ThrottlerGuard {
 @Module({
   imports: [
     TypeOrmModule.forRoot(databaseConfig),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot({
       throttlers: [
         {
@@ -48,4 +51,4 @@ class AuthAndWalletThrottlerGuard extends ThrottlerGuard {
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
