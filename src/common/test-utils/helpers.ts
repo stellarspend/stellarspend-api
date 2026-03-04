@@ -152,7 +152,7 @@ export function expectErrorProperties(
  */
 export function createSequentialMock<T>(...values: T[]): jest.Mock<Promise<T>> {
   const mock = jest.fn();
-  values.forEach((value, index) => {
+  values.forEach((value) => {
     mock.mockResolvedValueOnce(value);
   });
   return mock;

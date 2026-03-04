@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { WalletService } from './wallet.service';
 import { Wallet } from './wallet.entity';
 
 describe('WalletService', () => {
   let service: WalletService;
-  let repository: Repository<Wallet>;
 
   const mockRepository = {
     create: jest.fn(),
@@ -27,8 +25,7 @@ describe('WalletService', () => {
     }).compile();
 
     service = module.get<WalletService>(WalletService);
-    repository = module.get<Repository<Wallet>>(getRepositoryToken(Wallet));
-  });
+9  });
 
   afterEach(() => {
     jest.clearAllMocks();
