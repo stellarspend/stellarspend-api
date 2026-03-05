@@ -8,8 +8,8 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
-import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/user.entity';
 
 class SuspendUserDto {

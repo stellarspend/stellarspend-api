@@ -2,6 +2,7 @@ import { Injectable, Module, ExecutionContext } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppController } from './app.controller';
 import { UsersModule } from './modules/users/users.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { WalletModule } from './modules/wallet/wallet.module';
@@ -15,8 +16,8 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 @Injectable()
 class AuthAndWalletThrottlerGuard extends ThrottlerGuard {
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req = context.switchToHttp().getRequest();
-    const path: string = req?.path ?? req?.url ?? '';
+    const req = context.switchToHttp().getRequest<import('express').Request & { path?: string }>();
+    const path: string = req.path ?? req.url ?? '';
     if (path.startsWith('/wallet') || path.startsWith('/auth')) {
       return super.canActivate(context);
     }
@@ -44,6 +45,7 @@ class AuthAndWalletThrottlerGuard extends ThrottlerGuard {
     NotificationsModule,
     AnalyticsModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,

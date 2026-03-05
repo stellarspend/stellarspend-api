@@ -16,11 +16,7 @@ export class User {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column({
-    type: 'varchar',
-    length: 20,
-    default: UserRole.USER,
-  })
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
   @Column({ type: 'boolean', default: false })

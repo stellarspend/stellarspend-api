@@ -15,7 +15,7 @@ export class AccountStatusGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<import('express').Request & { user?: { userId?: string } }>();
     const userId = request.user?.userId;
 
     if (!userId) {

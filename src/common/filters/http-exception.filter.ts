@@ -45,7 +45,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
           message = r.message as string | string[];
         }
         if (typeof r.error === 'string') {
-          error = r.error as string;
+          error = r.error;
         }
       }
 
