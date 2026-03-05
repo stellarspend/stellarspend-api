@@ -44,6 +44,21 @@ export interface Budget {
 }
 
 /**
+ * SavingsGoal entity interface
+ */
+export interface SavingsGoal {
+  id: string;
+  userId: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  progress: number;
+  isCompleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
  * Creates a test user with optional overrides
  * @param overrides - Partial user properties to override defaults
  * @returns User object with test data
@@ -92,6 +107,26 @@ export function createTestBudget(overrides: Partial<Budget> = {}): Budget {
     period: 'monthly',
     startDate: new Date('2024-01-01T00:00:00Z'),
     endDate: new Date('2024-01-31T23:59:59Z'),
+    createdAt: new Date('2024-01-01T00:00:00Z'),
+    updatedAt: new Date('2024-01-01T00:00:00Z'),
+    ...overrides
+  };
+}
+
+/**
+ * Creates a test savings goal with optional overrides
+ * @param overrides - Partial savings goal properties to override defaults
+ * @returns SavingsGoal object with test data
+ */
+export function createTestSavingsGoal(overrides: Partial<SavingsGoal> = {}): SavingsGoal {
+  return {
+    id: '123e4567-e89b-12d3-a456-426614174003',
+    userId: '123e4567-e89b-12d3-a456-426614174000',
+    name: 'Emergency Fund',
+    targetAmount: 1000.00,
+    currentAmount: 0,
+    progress: 0,
+    isCompleted: false,
     createdAt: new Date('2024-01-01T00:00:00Z'),
     updatedAt: new Date('2024-01-01T00:00:00Z'),
     ...overrides
@@ -156,6 +191,28 @@ export function createTestBudgetList(count: number = 3, overrides: Partial<Budge
 }
 
 /**
+ * Creates a list of test savings goals
+ * @param count - Number of savings goals to create
+ * @param overrides - Optional overrides to apply to all goals
+ * @returns Array of SavingsGoal objects
+ */
+export function createTestSavingsGoalList(count: number = 3, overrides: Partial<SavingsGoal> = {}): SavingsGoal[] {
+  const goalNames = ['Emergency Fund', 'Vacation', 'New Car'];
+  
+  return Array.from({ length: count }, (_, index) => 
+    createTestSavingsGoal({
+      id: `123e4567-e89b-12d3-a456-42661417400${index + 3}`,
+      userId: '123e4567-e89b-12d3-a456-426614174000',
+      name: goalNames[index % goalNames.length],
+      targetAmount: 1000.00 + (index * 500),
+      currentAmount: index * 100,
+      progress: ((index * 100) / (1000.00 + (index * 500))) * 100,
+      ...overrides
+    })
+  );
+}
+
+/**
  * Creates an invalid user for testing validation
  * @returns Partial user with invalid data
  */
@@ -196,6 +253,19 @@ export function createInvalidBudget(): Partial<Budget> {
 }
 
 /**
+ * Creates an invalid savings goal for testing validation
+ * @returns Partial savings goal with invalid data
+ */
+export function createInvalidSavingsGoal(): Partial<SavingsGoal> {
+  return {
+    userId: '',
+    name: '',
+    targetAmount: -100.00,
+    currentAmount: -50.00
+  };
+}
+
+/**
  * Centralized test fixtures object for easy access
  */
 export const fixtures = {
@@ -213,5 +283,10 @@ export const fixtures = {
     valid: createTestBudget(),
     invalid: createInvalidBudget(),
     list: createTestBudgetList()
+  },
+  savingsGoals: {
+    valid: createTestSavingsGoal(),
+    invalid: createInvalidSavingsGoal(),
+    list: createTestSavingsGoalList()
   }
 };

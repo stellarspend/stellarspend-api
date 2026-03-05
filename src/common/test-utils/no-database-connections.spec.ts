@@ -57,7 +57,7 @@ describe('Property 3: No Real Database Connections in Tests', () => {
       const mockRepo = createMockRepository<any>();
 
       // Assert - verify all methods are jest mock functions
-      const methods = ['find', 'findOne', 'create', 'update', 'delete'];
+      const methods = ['find', 'findOne', 'create', 'update', 'delete'] as const;
       
       methods.forEach((method) => {
         expect(jest.isMockFunction((mockRepo as unknown as Record<string, unknown>)[method])).toBe(true);
