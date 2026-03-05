@@ -12,6 +12,7 @@ import {
   Optional,
   Logger,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, FindOptionsWhere } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -84,7 +85,25 @@ export class TransactionsService {
     @Optional()
     @InjectQueue(ANALYTICS_RECALCULATION_QUEUE)
     private readonly analyticsQueue?: Queue,
-  ) {}
+  ) { }
+
+  /**
+   * Periodic cron job that runs every 5 minutes to sync new transactions.
+   * It triggers a bulk sync job for all users.
+   */
+  @Cron('0 */5 * * * *')
+  async handlePeriodicSync() {
+    this.logger.log('Starting periodic transaction sync cron job...');
+    try {
+      await this.triggerBulkSync();
+      this.logger.log('Periodic sync job successfully enqueued');
+    } catch (error) {
+      this.logger.error(
+        `Failed to enqueue periodic sync job: ${(error as Error).message}`,
+      );
+    }
+  }
+
 
   async findAllPaginated(
     page: number = 1,

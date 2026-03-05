@@ -9,11 +9,15 @@ import {
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AccountStatusGuard } from '../../common/guards/account-status.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/user.entity';
 
 @ApiTags('analytics')
 @ApiBearerAuth()
 @Controller('analytics')
-@UseGuards(JwtAuthGuard, AccountStatusGuard)
+@UseGuards(JwtAuthGuard, AccountStatusGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 

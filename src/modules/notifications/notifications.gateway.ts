@@ -27,7 +27,7 @@ export class NotificationsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server!: Server<any, any>;
+  server!: Server; // use default types instead of any to avoid lint warnings
 
   private readonly logger = new Logger(NotificationsGateway.name);
 
