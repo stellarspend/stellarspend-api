@@ -10,7 +10,7 @@ async function bootstrap() {
 
   const adapter = app.getHttpAdapter();
   if (adapter.getType() === 'express') {
-    const instance = adapter.getInstance();
+    const instance = adapter.getInstance() as import('express').Application;
     instance.set('trust proxy', 1);
   }
 
