@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { SavingsController } from './savings.controller';
 import { SavingsService, ValidationError, AuthorizationError, NotFoundError } from './savings.service';

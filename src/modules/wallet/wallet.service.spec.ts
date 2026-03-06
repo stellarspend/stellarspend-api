@@ -25,7 +25,7 @@ describe('WalletService', () => {
     }).compile();
 
     service = module.get<WalletService>(WalletService);
-9  });
+  });
 
   afterEach(() => {
     jest.clearAllMocks();
