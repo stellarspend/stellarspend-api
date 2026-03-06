@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { BadRequestException } from '@nestjs/common';
 import { BudgetsController } from './budgets.controller';
 import { BudgetsService, ValidationError } from './budgets.service';
