@@ -18,6 +18,7 @@ import { Repository, Between, FindOptionsWhere } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Transaction } from './transaction.entity';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 import {
   ANALYTICS_RECALCULATION_QUEUE,
   JOB_RECALCULATE_ANALYTICS,
@@ -76,15 +77,11 @@ export class TransactionsService {
   constructor(
     @InjectRepository(Transaction)
     private readonly repository: Repository<Transaction>,
-    /**
-     * Queue is injected by NestJS DI when QueueModule is imported.
-     * Marked @Optional() so existing unit tests that call
-     *   `new TransactionsService(mockRepository)`
-     * continue to work without providing a queue mock.
-     */
     @Optional()
     @InjectQueue(ANALYTICS_RECALCULATION_QUEUE)
     private readonly analyticsQueue?: Queue,
+    @Optional()
+    private readonly notificationsGateway?: NotificationsGateway,
   ) { }
 
   /**
@@ -230,6 +227,9 @@ export class TransactionsService {
       }
     }
 
+    // Emit real-time notification to connected clients
+    this.emitTransactionNotifications(created);
+
     return created;
   }
 
@@ -322,8 +322,11 @@ export class TransactionsService {
           continue;
         }
 
-        await this.create(txData);
+        const created = await this.create(txData);
         result.created++;
+
+        // Emit real-time notifications for synced transactions
+        this.emitTransactionNotifications(created);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         result.errors.push(
@@ -333,6 +336,52 @@ export class TransactionsService {
     }
 
     return result;
+  }
+
+  /**
+   * Emits real-time notifications to connected WebSocket clients.
+   * Events are scoped to the authenticated user only.
+   */
+  private emitTransactionNotifications(transaction: Transaction): void {
+    if (!this.notificationsGateway) {
+      return;
+    }
+
+    try {
+      // Emit transaction created event
+      this.notificationsGateway.emitTransactionCreated({
+        userId: transaction.userId,
+        transactionId: transaction.id,
+        hash: transaction.hash,
+        amount: transaction.amount,
+        assetCode: transaction.assetCode,
+        transactionType: transaction.transactionType,
+        sourceAccount: transaction.sourceAccount,
+        destinationAccount: transaction.destinationAccount,
+        status: transaction.status,
+        timestamp: transaction.stellarCreatedAt.toISOString(),
+      });
+
+      // Emit balance updated event
+      this.notificationsGateway.emitBalanceUpdated({
+        userId: transaction.userId,
+        amount: transaction.amount,
+        hash: transaction.hash,
+        sourceAccount: transaction.sourceAccount,
+        assetCode: transaction.assetCode,
+        memo: transaction.memo,
+        timestamp: transaction.stellarCreatedAt.toISOString(),
+      });
+
+      this.logger.debug(
+        `Emitted real-time notifications for transaction ${transaction.id} to user ${transaction.userId}`,
+      );
+    } catch (error) {
+      // Never let WebSocket errors fail the primary operation
+      this.logger.error(
+        `Failed to emit WebSocket notifications: ${(error as Error).message}`,
+      );
+    }
   }
 
   private validateId(id: string): void {
