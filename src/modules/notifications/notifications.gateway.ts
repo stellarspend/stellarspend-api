@@ -19,6 +19,19 @@ type BalanceUpdatedEvent = {
   timestamp: string;
 };
 
+type TransactionCreatedEvent = {
+  userId: string;
+  transactionId: string;
+  hash: string;
+  amount: number;
+  assetCode: string;
+  transactionType: string;
+  sourceAccount: string;
+  destinationAccount?: string;
+  status: string;
+  timestamp: string;
+};
+
 @WebSocketGateway({
   namespace: '/notifications',
   cors: { origin: '*' },
@@ -59,6 +72,10 @@ export class NotificationsGateway
 
   emitBalanceUpdated(event: BalanceUpdatedEvent): void {
     this.server.to(this.userRoom(event.userId)).emit('balance.updated', event);
+  }
+
+  emitTransactionCreated(event: TransactionCreatedEvent): void {
+    this.server.to(this.userRoom(event.userId)).emit('transaction.created', event);
   }
 
   private userRoom(userId: string): string {
