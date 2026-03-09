@@ -3,6 +3,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { RequestTimestampMiddleware } from './common/middleware/request-timestamp.middleware';
 import { UsersModule } from './modules/users/users.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
@@ -48,6 +49,7 @@ class AuthAndWalletThrottlerGuard extends ThrottlerGuard {
   ],
   controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: AuthAndWalletThrottlerGuard,
