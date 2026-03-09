@@ -1,8 +1,9 @@
-import { Injectable, Module, ExecutionContext } from '@nestjs/common';
+import { Injectable, Module, ExecutionContext, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { RequestTimestampMiddleware } from './common/middleware/request-timestamp.middleware';
 import { UsersModule } from './modules/users/users.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { WalletModule } from './modules/wallet/wallet.module';
@@ -53,4 +54,10 @@ class AuthAndWalletThrottlerGuard extends ThrottlerGuard {
     },
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RequestTimestampMiddleware)
+      .forRoutes('*');
+  }
+}
