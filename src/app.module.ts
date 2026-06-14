@@ -14,6 +14,7 @@ import { RequestTimestampMiddleware } from "./common/middleware/request-timestam
 import { UsersModule } from "./modules/users/users.module";
 import { TransactionsModule } from "./modules/transactions/transactions.module";
 import { WalletModule } from "./modules/wallet/wallet.module";
+import { HealthModule } from "./health/health.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
 import { QueueModule } from "./queue/queue.module";
@@ -63,6 +64,7 @@ class AuthAndWalletThrottlerGuard extends ThrottlerGuard {
       }),
     }),
     
+    HealthModule,
     QueueModule,
     UsersModule,
     TransactionsModule,
