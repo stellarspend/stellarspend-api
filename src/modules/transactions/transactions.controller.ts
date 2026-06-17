@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +18,7 @@ import {
   ApiResponse,
   ApiBody,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { QueryTransactionsDto } from './dto/query-transactions.dto';
@@ -43,7 +45,19 @@ export class TransactionsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List transactions with pagination and filters' })
+  @ApiOperation({
+    summary: 'List transactions with pagination and filters',
+    description: 'Returns paginated transactions with metadata for frontend pagination',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 20, max: 100)' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order (default: desc)' })
+  @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by user ID' })
+  @ApiQuery({ name: 'category', required: false, type: String, description: 'Filter by category' })
+  @ApiQuery({ name: 'assetCode', required: false, type: String, description: 'Filter by asset code' })
+  @ApiQuery({ name: 'transactionType', required: false, type: String, description: 'Filter by transaction type' })
+  @ApiQuery({ name: 'startDate', required: false, type: Date, description: 'Filter transactions on or after this date' })
+  @ApiQuery({ name: 'endDate', required: false, type: Date, description: 'Filter transactions on or before this date' })
   @ApiResponse({ status: 200, description: 'Paginated list of transactions' })
   @ApiResponse({ status: 400, description: 'Invalid query parameters' })
   async findAll(@Query() query: QueryTransactionsDto) {
@@ -76,6 +90,9 @@ export class TransactionsController {
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const transaction = await this.transactionsService.findById(id);
+    if (!transaction) {
+      throw new NotFoundException(`Transaction with ID ${id} not found`);
+    }
     return {
       success: true,
       data: transaction,
@@ -112,7 +129,7 @@ export class TransactionsController {
   }
 
   @Post('sync')
-  @HttpCode(202)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Enqueue a background bulk-sync job' })
   @ApiBody({ type: TriggerSyncDto })
   @ApiResponse({ status: 202, description: 'Sync job enqueued; returns BullMQ job ID' })

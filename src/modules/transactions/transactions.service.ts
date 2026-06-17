@@ -82,7 +82,7 @@ export class TransactionsService {
     private readonly analyticsQueue?: Queue,
     @Optional()
     private readonly notificationsGateway?: NotificationsGateway,
-  ) { }
+  ) {}
 
   /**
    * Periodic cron job that runs every 5 minutes to sync new transactions.
@@ -101,15 +101,23 @@ export class TransactionsService {
     }
   }
 
-
+  /**
+   * Find all transactions with pagination and filters.
+   * Returns paginated results with metadata for frontend pagination.
+   */
   async findAllPaginated(
     page: number = 1,
     limit: number = 20,
     sortOrder: 'asc' | 'desc' = 'desc',
     filters?: TransactionFilterOptions,
   ): Promise<PaginatedTransactionsResult> {
+    // Validate pagination parameters
+    const validatedPage = Math.max(1, page);
+    const validatedLimit = Math.min(100, Math.max(1, limit));
+
     const where: FindOptionsWhere<Transaction> = {};
 
+    // Apply filters
     if (filters?.userId) {
       where.userId = filters.userId;
     }
@@ -126,6 +134,7 @@ export class TransactionsService {
       where.transactionType = filters.transactionType;
     }
 
+    // Date range filtering
     if (filters?.startDate && filters?.endDate) {
       where.stellarCreatedAt = Between(filters.startDate, filters.endDate);
     } else if (filters?.startDate) {
@@ -137,17 +146,17 @@ export class TransactionsService {
     const [data, total] = await this.repository.findAndCount({
       where,
       order: { stellarCreatedAt: sortOrder },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (validatedPage - 1) * validatedLimit,
+      take: validatedLimit,
     });
 
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / validatedLimit);
 
     return {
       data,
       meta: {
-        page,
-        limit,
+        page: validatedPage,
+        limit: validatedLimit,
         total,
         totalPages,
         hasNextPage: page < totalPages,
@@ -209,8 +218,7 @@ export class TransactionsService {
     const transaction = this.repository.create(transactionData);
     const created = await this.repository.save(transaction);
 
-    // Offload analytics recalculation to the background queue so the API
-    // responds immediately without waiting for aggregation to finish.
+    // Offload analytics recalculation to the background queue
     if (this.analyticsQueue) {
       try {
         await this.analyticsQueue.add(JOB_RECALCULATE_ANALYTICS, {
@@ -236,11 +244,6 @@ export class TransactionsService {
   /**
    * Triggers an asynchronous bulk-sync of Stellar transactions for a user.
    * The actual sync logic runs inside AnalyticsProcessor (JOB_BULK_SYNC handler).
-   *
-   * @param userId  - Optional user UUID; omit to sync all users
-   * @param since   - Optional ISO date string; only sync transactions after this date
-   * @returns jobId assigned by BullMQ
-   * @throws Error if the queue is not available (QueueModule not imported)
    */
   async triggerBulkSync(
     userId?: string,
@@ -384,6 +387,8 @@ export class TransactionsService {
     }
   }
 
+  // ─── Validation Methods ──────────────────────────────────────────
+
   private validateId(id: string): void {
     if (!id || typeof id !== 'string') {
       throw new ValidationError('Transaction ID is required and must be a string');
@@ -491,7 +496,7 @@ export class TransactionsService {
       throw new ValidationError('Amount is required');
     }
 
-    // Hash validation (required for Stellar transactions)
+    // Hash validation
     if (transactionData.hash !== undefined) {
       if (
         typeof transactionData.hash !== 'string' ||
