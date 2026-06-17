@@ -21,6 +21,7 @@ export class AuthController {
   @Get()
   @ApiOperation({ summary: 'Get auth module status' })
   @ApiResponse({ status: 200, description: 'Module status' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   status() {
     return this.authService.getStatus();
   }

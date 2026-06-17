@@ -30,6 +30,15 @@ async function bootstrap() {
     .setTitle('StellarSpend API')
     .setDescription('Backend API for user management, data storage, and Stellar transaction processing')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'JWT access token obtained from POST /auth/login',
+      },
+      'bearer',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);

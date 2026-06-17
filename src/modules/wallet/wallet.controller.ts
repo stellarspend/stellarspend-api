@@ -14,6 +14,7 @@ export class WalletController {
   @Get()
   @ApiOperation({ summary: 'Get wallet module status' })
   @ApiResponse({ status: 200, description: 'Module status' })
+  @ApiResponse({ status: 401, description: 'Unauthorized — invalid or missing JWT' })
   status() {
     return this.walletService.getStatus();
   }
@@ -22,6 +23,9 @@ export class WalletController {
   @ApiOperation({ summary: 'Get account balances for a Stellar public key' })
   @ApiParam({ name: 'publicKey', description: 'Stellar account public key' })
   @ApiResponse({ status: 200, description: 'Account balances (publicKey and balances array)' })
+  @ApiResponse({ status: 400, description: 'Invalid Stellar public key format' })
+  @ApiResponse({ status: 401, description: 'Unauthorized — invalid or missing JWT' })
+  @ApiResponse({ status: 404, description: 'Stellar account not found' })
   async fetchAccountBalances(
     @Param('publicKey') publicKey: string,
   ): Promise<{ publicKey: string; balances: AssetBalance[] }> {

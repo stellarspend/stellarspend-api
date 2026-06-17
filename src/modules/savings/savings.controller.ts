@@ -14,11 +14,20 @@ import {
   Headers,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiParam,
+  ApiHeader,
+} from '@nestjs/swagger';
 import { SavingsService, ValidationError, AuthorizationError, NotFoundError } from './savings.service';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateContributionDto } from './dto/update-contribution.dto';
 import { GoalResponseDto } from './dto/goal-response.dto';
 
+@ApiTags('savings')
 @Controller('savings')
 export class SavingsController {
   private readonly logger = new Logger(SavingsController.name);
@@ -31,6 +40,12 @@ export class SavingsController {
    */
   @Post('goals')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new savings goal' })
+  @ApiHeader({ name: 'x-user-id', description: 'Authenticated user ID', required: true })
+  @ApiBody({ type: CreateGoalDto })
+  @ApiResponse({ status: 201, description: 'Savings goal created', type: GoalResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid request body or missing x-user-id header' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async createGoal(
     @Headers('x-user-id') userId: string,
     @Body() createGoalDto: CreateGoalDto,
@@ -69,6 +84,11 @@ export class SavingsController {
    */
   @Get('goals')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all savings goals for the authenticated user' })
+  @ApiHeader({ name: 'x-user-id', description: 'Authenticated user ID', required: true })
+  @ApiResponse({ status: 200, description: 'List of savings goals', type: [GoalResponseDto] })
+  @ApiResponse({ status: 400, description: 'Missing x-user-id header' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async getGoals(
     @Headers('x-user-id') userId: string,
   ): Promise<GoalResponseDto[]> {
@@ -102,6 +122,15 @@ export class SavingsController {
    */
   @Patch('goals/:id/contribution')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Add a contribution to a savings goal' })
+  @ApiHeader({ name: 'x-user-id', description: 'Authenticated user ID', required: true })
+  @ApiParam({ name: 'id', description: 'Savings goal ID', format: 'uuid' })
+  @ApiBody({ type: UpdateContributionDto })
+  @ApiResponse({ status: 200, description: 'Contribution added', type: GoalResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid request body or missing x-user-id header' })
+  @ApiResponse({ status: 403, description: 'User does not own this goal' })
+  @ApiResponse({ status: 404, description: 'Savings goal not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async updateContribution(
     @Headers('x-user-id') userId: string,
     @Param('id') goalId: string,
