@@ -1,4 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../modules/users/user.entity';
@@ -29,8 +35,7 @@ export class AccountStatusGuard implements CanActivate {
     });
 
     if (!user) {
-      // User not found, let other guards handle this
-      return true;
+      throw new UnauthorizedException('Account not found');
     }
 
     if (user.isSuspended) {
