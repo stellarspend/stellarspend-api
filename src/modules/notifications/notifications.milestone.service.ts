@@ -36,6 +36,66 @@ export class NotificationsMilestoneService {
     }
   }
 
+  async checkAndTriggerSavingsGoalMilestones(
+    userId: string,
+    goalName: string,
+    currentAmount: number,
+    targetAmount: number,
+    previousAmount: number = 0
+  ): Promise<void> {
+    if (targetAmount <= 0) {
+      return;
+    }
+
+    const previousProgress = (previousAmount / targetAmount) * 100;
+    const currentProgress = (currentAmount / targetAmount) * 100;
+
+    if (previousProgress < 50 && currentProgress >= 50) {
+      await this.notificationsService.create({
+        userId,
+        title: 'Savings Goal Progress! 🎯',
+        message: `You're halfway there! Your "${goalName}" goal is 50% complete. Keep saving!`,
+        type: 'info',
+        category: 'savings-goal-progress',
+      });
+    }
+
+    if (previousAmount < targetAmount && currentAmount >= targetAmount) {
+      await this.notificationsService.create({
+        userId,
+        title: 'Savings Goal Completed! 🎉',
+        message: `Congratulations! You've reached your "${goalName}" savings goal of $${targetAmount.toFixed(2)}!`,
+        type: 'success',
+        category: 'savings-goal-completion',
+      });
+    }
+  }
+
+  async checkAndTriggerBudgetWarning(
+    userId: string,
+    category: string,
+    currentSpent: number,
+    budgetLimit: number,
+    previousSpent: number = 0
+  ): Promise<void> {
+    if (budgetLimit <= 0) {
+      return;
+    }
+
+    const previousPercent = (previousSpent / budgetLimit) * 100;
+    const currentPercent = (currentSpent / budgetLimit) * 100;
+
+    if (previousPercent < 80 && currentPercent >= 80) {
+      await this.notificationsService.create({
+        userId,
+        title: 'Budget Warning ⚠️',
+        message: `You've used ${Math.round(currentPercent)}% of your ${category} budget. Consider slowing down your spending.`,
+        type: 'warning',
+        category: 'budget-warning',
+      });
+    }
+  }
+
   getMilestones(): SavingsMilestone[] {
     return this.milestones;
   }
