@@ -83,6 +83,23 @@ export class UsersService {
    * @throws ValidationError if ID or data is invalid
    * @throws NotFoundError if user doesn't exist
    */
+  async updateProfile(id: string, userData: Partial<User>): Promise<User> {
+    this.validateId(id);
+    this.validateUserData(userData, true);
+    
+    const existingUser = await this.repository.findOne(id);
+    if (!existingUser) {
+      throw new NotFoundError(`User with ID ${id} not found`);
+    }
+    
+    const updatedUser: Partial<User> = {
+      ...userData,
+      updatedAt: new Date()
+    };
+    
+    return this.repository.update(id, updatedUser);
+  }
+
   async update(id: string, userData: Partial<User>): Promise<User> {
     this.validateId(id);
     this.validateUserData(userData, true);

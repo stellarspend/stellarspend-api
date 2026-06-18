@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -11,12 +11,15 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AccountStatusGuard } from '../../common/guards/account-status.guard';
+import { UsersService } from './users.service';
 
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
 @UseGuards(JwtAuthGuard, AccountStatusGuard)
 export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
   @Post()
   @ApiOperation({ summary: 'Create a new user' })
   @ApiBody({ type: CreateUserDto })
@@ -35,12 +38,31 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update user by ID' })
+  @ApiOperation({ summary: 'Update user by ID (admin only)' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiBody({ type: UpdateUserDto })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request body' })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return { message: 'User updated', id, data: updateUserDto };
+  }
+
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request body' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateProfile(@Req() req: any, @Body() updateUserDto: UpdateUserDto) {
+    const userId = req.user?.sub || req.user?.userId;
+    if (!userId) {
+      return { statusCode: 401, message: 'Unauthorized' };
+    }
+    const updatedUser = await this.usersService.updateProfile(userId, updateUserDto);
+    return {
+      success: true,
+      message: 'Profile updated successfully',
+      data: updatedUser,
+    };
   }
 }
