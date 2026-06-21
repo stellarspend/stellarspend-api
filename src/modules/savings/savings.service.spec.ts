@@ -218,3 +218,60 @@ describe('SavingsService', () => {
     });
   });
 });
+
+describe('SavingsService - Goal Progress Metrics', () => {
+  let service: SavingsService;
+  let repositoryMock: any;
+
+  beforeEach(async () => {
+    repositoryMock = {
+      findOne: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        SavingsService,
+        {
+          provide: getRepositoryToken(SavingsGoal),
+          useValue: repositoryMock,
+        },
+      ],
+    }).compile();
+
+    service = module.get<SavingsService>(SavingsService);
+  });
+
+  it('should successfully compute progress configurations for valid items', async () => {
+    repositoryMock.findOne.mockResolvedValue({
+      id: 'mock-uuid-1',
+      name: 'Stellar Node Hardware Fund',
+      targetAmount: 5000,
+      currentAmount: 2500,
+    });
+
+    const result = await service.calculateGoalProgress('mock-uuid-1');
+    expect(result.percentage).toBe(50);
+    expect(result.isCompleted).toBe(false);
+  });
+
+  it('should explicitly clamp progress percentages at 100% when targets are surpassed', async () => {
+    repositoryMock.findOne.mockResolvedValue({
+      id: 'mock-uuid-2',
+      name: 'Soroban Security Audit Pool',
+      targetAmount: 1000,
+      currentAmount: 1200,
+    });
+
+    const result = await service.calculateGoalProgress('mock-uuid-2');
+    expect(result.percentage).toBe(100);
+    expect(result.isCompleted).toBe(true);
+  });
+
+  it('should throw a 404 NotFoundException for unrecognized target goal IDs', async () => {
+    repositoryMock.findOne.mockResolvedValue(null);
+
+    await expect(service.calculateGoalProgress('unknown-id')).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+});

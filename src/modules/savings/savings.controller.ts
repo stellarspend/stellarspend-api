@@ -33,7 +33,10 @@ export class SavingsController {
   private readonly logger = new Logger(SavingsController.name);
 
   constructor(private readonly savingsService: SavingsService) {}
-
+@Get(':id/progress')
+  async getGoalProgress(@Param('id') id: string) {
+    return this.savingsService.calculateGoalProgress(id);
+  }
   /**
    * Create a new savings goal
    * POST /savings/goals

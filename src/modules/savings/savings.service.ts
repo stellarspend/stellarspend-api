@@ -266,4 +266,30 @@ export class SavingsService {
       throw new ValidationError('Contribution amount cannot have more than 2 decimal places');
     }
   }
+  async calculateGoalProgress(id: string) {
+    const goal = await this.savingsGoalRepository.findOne({ where: { id } });
+
+    if (!goal) {
+      throw new NotFoundException(`Savings goal configuration with ID "${id}" could not be found.`);
+    }
+
+    // Avoid division-by-zero vulnerabilities if targetAmount defaults to 0
+    const target = goal.targetAmount || 1;
+    const current = goal.currentAmount || 0;
+
+    // Calculate precision ratio and clamp at 100% when goal parameters are exceeded
+    let percentage = Math.round((current / target) * 100);
+    if (percentage > 100) {
+      percentage = 100;
+    }
+
+    return {
+      id: goal.id,
+      name: goal.name,
+      targetAmount: target,
+      currentAmount: current,
+      percentage,
+      isCompleted: current >= target,
+    };
+  }
 }
