@@ -130,21 +130,22 @@ describe("WalletService", () => {
   });
 
   it('should throw NotFoundException when Stellar account not found', async () => {
-  mockCacheManager.get.mockResolvedValue(null);
+    mockCacheManager.get.mockResolvedValue(null);
 
-  jest.spyOn((service as any).server, 'loadAccount').mockRejectedValue({
-    response: { status: 404 },
+    jest.spyOn((service as any).server, 'loadAccount').mockRejectedValue({
+      response: { status: 404 },
+    });
+
+    await expect(service.getAccountBalances(validPublicKey)).rejects.toThrow(
+      NotFoundException,
+    );
   });
-
-  await expect(service.getAccountBalances(validPublicKey)).rejects.toThrow(
-    NotFoundException,
-  );
-});
 
   it("should include missing supported assets with zero balance", async () => {
     mockCacheManager.get.mockResolvedValue(null);
+    const loadAccountSpy = jest.spyOn((service as any).server, "loadAccount");
 
-    mockServer.loadAccount.mockResolvedValue({
+    loadAccountSpy.mockResolvedValue({
       balances: [
         {
           asset_type: "native",
@@ -160,6 +161,7 @@ describe("WalletService", () => {
 
     expect(usdc?.balance).toBe("0.0000000");
     expect(eurc?.balance).toBe("0.0000000");
+    expect(loadAccountSpy).toHaveBeenCalledWith(validPublicKey);
   });
 
   it("should be defined", () => {
