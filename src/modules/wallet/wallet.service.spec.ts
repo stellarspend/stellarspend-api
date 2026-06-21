@@ -20,10 +20,6 @@ describe("WalletService", () => {
     set: jest.fn(),
   };
 
-  const mockServer = {
-    loadAccount: jest.fn(),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -51,19 +47,24 @@ describe("WalletService", () => {
 
   it("should return cached balances if available", async () => {
     const cachedBalances = [{ asset: "XLM", balance: "100" }];
+    const loadAccountSpy = jest.spyOn((service as any).server, "loadAccount");
 
     mockCacheManager.get.mockResolvedValue(cachedBalances);
 
     const result = await service.getAccountBalances(validPublicKey);
 
     expect(result).toEqual(cachedBalances);
-    expect(mockCacheManager.get).toHaveBeenCalled();
+    expect(mockCacheManager.get).toHaveBeenCalledWith(
+      `wallet:balances:${validPublicKey}`,
+    );
+    expect(loadAccountSpy).not.toHaveBeenCalled();
   });
 
-  it("should fetch balances from Stellar if cache is empty", async () => {
+  it("should fetch balances from Stellar when cache is empty", async () => {
     mockCacheManager.get.mockResolvedValue(null);
+    const loadAccountSpy = jest.spyOn((service as any).server, "loadAccount");
 
-    jest.spyOn((service as any).server, "loadAccount").mockResolvedValue({
+    loadAccountSpy.mockResolvedValue({
       balances: [
         {
           asset_type: "native",
@@ -74,13 +75,52 @@ describe("WalletService", () => {
 
     const result = await service.getAccountBalances(validPublicKey);
 
+    expect(loadAccountSpy).toHaveBeenCalledWith(validPublicKey);
     expect(result).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ asset: "XLM", balance: "50" }),
       ]),
     );
+    expect(mockCacheManager.set).toHaveBeenCalledWith(
+      `wallet:balances:${validPublicKey}`,
+      expect.arrayContaining([
+        expect.objectContaining({ asset: "XLM", balance: "50" }),
+      ]),
+      60,
+    );
+  });
 
-    expect(mockCacheManager.set).toHaveBeenCalled();
+  it("should fallback to Stellar network on cache miss and cache the balances", async () => {
+    mockCacheManager.get.mockResolvedValue(null);
+    const loadAccountSpy = jest.spyOn((service as any).server, "loadAccount");
+
+    loadAccountSpy.mockResolvedValue({
+      balances: [
+        {
+          asset_type: "native",
+          balance: "75",
+        },
+      ],
+    });
+
+    const result = await service.getAccountBalances(validPublicKey);
+
+    expect(result).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ asset: "XLM", balance: "75" }),
+      ]),
+    );
+    expect(mockCacheManager.get).toHaveBeenCalledWith(
+      `wallet:balances:${validPublicKey}`,
+    );
+    expect(loadAccountSpy).toHaveBeenCalledWith(validPublicKey);
+    expect(mockCacheManager.set).toHaveBeenCalledWith(
+      `wallet:balances:${validPublicKey}`,
+      expect.arrayContaining([
+        expect.objectContaining({ asset: "XLM", balance: "75" }),
+      ]),
+      60,
+    );
   });
 
   it("should throw BadRequestException for invalid public key", async () => {
