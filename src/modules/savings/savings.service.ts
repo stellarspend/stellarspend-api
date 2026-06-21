@@ -119,6 +119,31 @@ export class SavingsService {
   }
 
   /**
+   * Deletes a savings goal
+   * @param userId - User ID requesting the deletion
+   * @param goalId - Goal ID to delete
+   * @returns Promise resolving when the goal has been deleted
+   * @throws ValidationError if data is invalid
+   * @throws AuthorizationError if user doesn't own the goal
+   * @throws NotFoundError if goal doesn't exist
+   */
+  async deleteGoal(userId: string, goalId: string): Promise<void> {
+    this.validateUserId(userId);
+    this.validateId(goalId);
+
+    const goal = await this.repository.findOne(goalId);
+    if (!goal) {
+      throw new NotFoundError('Goal not found');
+    }
+
+    if (goal.userId !== userId) {
+      throw new AuthorizationError('You do not have permission to access this goal');
+    }
+
+    await this.repository.delete(goalId);
+  }
+
+  /**
    * Calculates progress percentage
    * @param currentAmount - Current saved amount
    * @param targetAmount - Target amount

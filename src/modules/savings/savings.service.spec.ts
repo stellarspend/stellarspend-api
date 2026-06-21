@@ -171,6 +171,55 @@ describe('SavingsService', () => {
     });
   });
 
+  describe('deleteGoal', () => {
+    it('should delete a goal owned by the user', async () => {
+      const userId = '123e4567-e89b-12d3-a456-426614174000';
+      const goal = createTestSavingsGoal({ userId });
+      repository.seed([goal]);
+
+      await service.deleteGoal(userId, goal.id);
+
+      const found = await repository.findOne(goal.id);
+      expect(found).toBeNull();
+    });
+
+    it('should reject deletion with invalid user ID', async () => {
+      const goal = createTestSavingsGoal({ userId: '123e4567-e89b-12d3-a456-426614174000' });
+      repository.seed([goal]);
+
+      await expect(service.deleteGoal('', goal.id)).rejects.toThrow(ValidationError);
+      await expect(service.deleteGoal('invalid-uuid', goal.id)).rejects.toThrow(ValidationError);
+    });
+
+    it('should reject deletion with invalid goal ID', async () => {
+      const userId = '123e4567-e89b-12d3-a456-426614174000';
+
+      await expect(service.deleteGoal(userId, '')).rejects.toThrow(ValidationError);
+      await expect(service.deleteGoal(userId, 'invalid-uuid')).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw NotFoundError for non-existent goal', async () => {
+      const userId = '123e4567-e89b-12d3-a456-426614174000';
+      const goalId = '123e4567-e89b-12d3-a456-426614174999';
+
+      await expect(service.deleteGoal(userId, goalId)).rejects.toThrow(NotFoundError);
+    });
+
+    it('should throw AuthorizationError when deleting another user\'s goal', async () => {
+      const ownerId = '123e4567-e89b-12d3-a456-426614174000';
+      const otherUserId = '123e4567-e89b-12d3-a456-426614174001';
+      const goal = createTestSavingsGoal({ userId: ownerId });
+      repository.seed([goal]);
+
+      await expect(service.deleteGoal(otherUserId, goal.id)).rejects.toThrow(AuthorizationError);
+      await expect(service.deleteGoal(otherUserId, goal.id)).rejects.toThrow('You do not have permission to access this goal');
+
+      // Goal should remain untouched
+      const found = await repository.findOne(goal.id);
+      expect(found).not.toBeNull();
+    });
+  });
+
   describe('calculateProgress', () => {
     it('should calculate progress correctly', () => {
       expect(service.calculateProgress(0, 1000)).toBe(0);

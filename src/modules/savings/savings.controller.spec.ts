@@ -16,6 +16,7 @@ describe('SavingsController', () => {
       createGoal: jest.fn(),
       findGoalsByUser: jest.fn(),
       addContribution: jest.fn(),
+      deleteGoal: jest.fn(),
       calculateProgress: jest.fn(),
       validateGoalOwnership: jest.fn(),
     } as any;
@@ -382,6 +383,55 @@ describe('SavingsController', () => {
       mockSavingsService.addContribution.mockRejectedValue(deadlockError);
 
       await expect(controller.updateContribution(userId, goalId, updateContributionDto)).rejects.toThrow(
+        'An error occurred while processing your request',
+      );
+    });
+  });
+
+  describe('deleteGoal', () => {
+    const userId = '123e4567-e89b-12d3-a456-426614174000';
+    const goalId = '123e4567-e89b-12d3-a456-426614174001';
+
+    it('should delete a goal and return 204', async () => {
+      mockSavingsService.deleteGoal.mockResolvedValue(undefined);
+
+      const result = await controller.deleteGoal(userId, goalId);
+
+      expect(mockSavingsService.deleteGoal).toHaveBeenCalledWith(userId, goalId);
+      expect(result).toBeUndefined();
+    });
+
+    it('should throw BadRequestException when userId is not provided', async () => {
+      await expect(controller.deleteGoal('', goalId)).rejects.toThrow(BadRequestException);
+      expect(mockSavingsService.deleteGoal).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when service throws ValidationError', async () => {
+      mockSavingsService.deleteGoal.mockRejectedValue(new ValidationError('Goal ID must be a valid UUID'));
+
+      await expect(controller.deleteGoal(userId, 'invalid-uuid')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ForbiddenException when service throws AuthorizationError', async () => {
+      mockSavingsService.deleteGoal.mockRejectedValue(
+        new AuthorizationError('You do not have permission to access this goal'),
+      );
+
+      await expect(controller.deleteGoal(userId, goalId)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when service throws NotFoundError', async () => {
+      mockSavingsService.deleteGoal.mockRejectedValue(new NotFoundError('Goal not found'));
+
+      await expect(controller.deleteGoal(userId, goalId)).rejects.toThrow(NotFoundException);
+      await expect(controller.deleteGoal(userId, goalId)).rejects.toThrow('Goal not found');
+    });
+
+    it('should propagate non-validation errors as InternalServerErrorException', async () => {
+      const unexpectedError = new Error('Database connection failed');
+      mockSavingsService.deleteGoal.mockRejectedValue(unexpectedError);
+
+      await expect(controller.deleteGoal(userId, goalId)).rejects.toThrow(
         'An error occurred while processing your request',
       );
     });

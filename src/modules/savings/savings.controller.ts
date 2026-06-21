@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   HttpCode,
   HttpStatus,
@@ -161,6 +162,36 @@ export class SavingsController {
       };
     } catch (error) {
       return this.handleError(error, 'updateContribution', { userId, goalId, amount: updateContributionDto.amount });
+    }
+  }
+
+  /**
+   * Delete a savings goal
+   * DELETE /savings/goals/:id
+   */
+  @Delete('goals/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a savings goal' })
+  @ApiHeader({ name: 'x-user-id', description: 'Authenticated user ID', required: true })
+  @ApiParam({ name: 'id', description: 'Savings goal ID', format: 'uuid' })
+  @ApiResponse({ status: 204, description: 'Goal deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request or missing x-user-id header' })
+  @ApiResponse({ status: 403, description: 'User does not own this goal' })
+  @ApiResponse({ status: 404, description: 'Savings goal not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  async deleteGoal(
+    @Headers('x-user-id') userId: string,
+    @Param('id') goalId: string,
+  ): Promise<void> {
+    // Validate userId is provided
+    if (!userId) {
+      throw new BadRequestException('User ID is required in x-user-id header');
+    }
+
+    try {
+      await this.savingsService.deleteGoal(userId, goalId);
+    } catch (error) {
+      return this.handleError(error, 'deleteGoal', { userId, goalId });
     }
   }
 
