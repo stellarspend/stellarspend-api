@@ -170,11 +170,11 @@ describe('AnalyticsService', () => {
 
       it('should include uncategorized transactions', async () => {
         // Arrange
-        const currentRows = [
+        const currentRows: any[] = [
           { category: 'groceries', total_amount: '800', transaction_count: '5' },
           { category: 'uncategorized', total_amount: '200', transaction_count: '2' },
         ];
-        const previousRows = [{ total_amount: '1000', transaction_count: '7' }];
+        const previousRows: any[] = [{ total_amount: '1000', transaction_count: '7' }];
 
         mockDataSource.query
           .mockResolvedValueOnce(currentRows)
