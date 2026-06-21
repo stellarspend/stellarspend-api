@@ -25,6 +25,7 @@ import {
   JOB_RECALCULATE_ANALYTICS,
   JOB_BULK_SYNC,
 } from '../../queue/queue.constants';
+import { WalletService } from '../wallet/wallet.service';
 
 /**
  * Exported for backward-compatibility with existing unit tests.
@@ -83,6 +84,8 @@ export class TransactionsService {
     private readonly analyticsQueue?: Queue,
     @Optional()
     private readonly notificationsGateway?: NotificationsGateway,
+    @Optional()
+private readonly walletService?: WalletService,
   ) {}
 
   /**
@@ -254,6 +257,19 @@ export class TransactionsService {
 
     const transaction = this.repository.create(transactionData);
     const created = await this.repository.save(transaction);
+
+    if (this.walletService && transactionData.sourceAccount) {
+      try {
+        await this.walletService.invalidateBalanceCache(transactionData.sourceAccount);
+        this.logger.log(
+          `Invalidated balance cache for sourceAccount=${transactionData.sourceAccount}`,
+        );
+      } catch (err) {
+        this.logger.error(
+          `Failed to invalidate balance cache: ${(err as Error).message}`,
+        );
+      }
+    }
 
     // Offload analytics recalculation to the background queue
     if (this.analyticsQueue) {

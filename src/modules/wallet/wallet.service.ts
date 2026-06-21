@@ -149,4 +149,9 @@ export class WalletService {
   getStatus() {
     return { module: "Wallet", status: "Working" };
   }
+
+  async invalidateBalanceCache(publicKey: string): Promise<void> {
+    const cacheKey = `wallet:balances:${publicKey}`;
+    await this.cacheManager.del(cacheKey);
+  }
 }

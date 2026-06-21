@@ -52,11 +52,14 @@ describe("WalletService", () => {
     mockCacheManager.get.mockResolvedValue(cachedBalances);
 
     const result = await service.getAccountBalances(validPublicKey);
+    
 
     expect(result).toEqual(cachedBalances);
     expect(mockCacheManager.get).toHaveBeenCalledWith(
       `wallet:balances:${validPublicKey}`,
     );
+
+    
     expect(loadAccountSpy).not.toHaveBeenCalled();
   });
 
@@ -74,6 +77,7 @@ describe("WalletService", () => {
     });
 
     const result = await service.getAccountBalances(validPublicKey);
+    
 
     expect(loadAccountSpy).toHaveBeenCalledWith(validPublicKey);
     expect(result).toEqual(
@@ -155,6 +159,8 @@ describe("WalletService", () => {
     });
 
     const result = await service.getAccountBalances(validPublicKey);
+
+    
 
     const usdc = result.find((b) => b.asset === "USDC");
     const eurc = result.find((b) => b.asset === "EURC");
@@ -244,6 +250,47 @@ describe("WalletService", () => {
     it("should return module status", () => {
       const result = service.getStatus();
       expect(result).toEqual({ module: "Wallet", status: "Working" });
+    });
+  });
+
+  describe('invalidateBalanceCache', () => {
+    it('should delete the cache entry for the given public key', async () => {
+      mockCacheManager.del = jest.fn().mockResolvedValue(undefined);
+  
+      await service.invalidateBalanceCache(validPublicKey);
+  
+      expect(mockCacheManager.del).toHaveBeenCalledWith(
+        `wallet:balances:${validPublicKey}`,
+      );
+    });
+  
+    it('should cause a fresh Stellar fetch after invalidation', async () => {
+      const freshBalances = [{ asset: 'XLM', balance: '200' }];
+  
+      // First call: cache hit
+      mockCacheManager.get.mockResolvedValueOnce(freshBalances);
+      const first = await service.getAccountBalances(validPublicKey);
+      expect(first).toEqual(freshBalances);
+  
+      // Invalidate
+      mockCacheManager.del = jest.fn().mockResolvedValue(undefined);
+      await service.invalidateBalanceCache(validPublicKey);
+      expect(mockCacheManager.del).toHaveBeenCalledWith(
+        `wallet:balances:${validPublicKey}`,
+      );
+  
+      // Second call: cache miss → Stellar fetch
+      mockCacheManager.get.mockResolvedValueOnce(null);
+      jest.spyOn((service as any).server, 'loadAccount').mockResolvedValue({
+        balances: [{ asset_type: 'native', balance: '200' }],
+      });
+  
+      const second = await service.getAccountBalances(validPublicKey);
+      expect(second).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ asset: 'XLM', balance: '200' }),
+        ]),
+      );
     });
   });
 });
