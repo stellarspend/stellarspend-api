@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -33,5 +33,20 @@ export class AnalyticsController {
     @Query('endDate') endDate?: string,
   ) {
     return this.analyticsService.getSummary({ userId, startDate, endDate });
+  }
+
+  @Get('spending-summary')
+  @ApiOperation({ summary: 'Get spending summary by category and period with trend analysis' })
+  @ApiQuery({ name: 'period', required: true, enum: ['daily', 'weekly', 'monthly'], description: 'Time period for aggregation' })
+  @ApiQuery({ name: 'userId', required: false, description: 'Filter by user ID' })
+  @ApiResponse({ status: 200, description: 'Spending summary with category breakdown and trend' })
+  async getSpendingSummary(
+    @Query('period') period?: string,
+    @Query('userId') userId?: string,
+  ) {
+    if (!period || !['daily', 'weekly', 'monthly'].includes(period)) {
+      throw new BadRequestException('Period must be one of: daily, weekly, monthly');
+    }
+    return this.analyticsService.getSpendingSummary(period as 'daily' | 'weekly' | 'monthly', userId);
   }
 }
