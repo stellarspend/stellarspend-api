@@ -1,16 +1,18 @@
-import { Controller, Post, Param, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/user.entity';
+import { User, UserRole } from '../users/user.entity';
+import { QueryUsersDto } from './dto/query-users.dto';
 
 class SuspendUserDto {
   reason?: string;
@@ -27,6 +29,37 @@ class SuspendUserDto {
 @Roles(UserRole.ADMIN)
 export class AdminController {
   constructor(private readonly usersService: UsersService) { }
+
+  /**
+   * List all users with pagination
+   * @param query - Pagination query parameters
+   * @returns Paginated user list with metadata
+   */
+  @Get('users')
+  @ApiOperation({ summary: 'List all users with pagination' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10, max: 100)' })
+  @ApiResponse({ status: 200, description: 'Paginated list of users' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  async listUsers(@Query() query: QueryUsersDto) {
+    const result = await this.usersService.findAllPaginated(query.page, query.limit);
+
+    return {
+      success: true,
+      data: result.data.map((user: User) => ({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        isSuspended: user.isSuspended,
+        suspensionReason: user.suspensionReason,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      })),
+      meta: result.meta,
+    };
+  }
 
   /**
    * Suspend a user account

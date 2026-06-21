@@ -39,6 +39,65 @@ describe('UsersService', () => {
     });
   });
 
+  describe('findAllPaginated', () => {
+    it('should return paginated users with metadata', async () => {
+      const expectedUsers = createTestUserList(3);
+      mockRepository.findAndCount.mockResolvedValue([expectedUsers, 3]);
+
+      const result = await service.findAllPaginated(1, 10);
+
+      expect(result.data).toEqual(expectedUsers);
+      expect(result.meta).toEqual({
+        page: 1,
+        limit: 10,
+        total: 3,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      });
+      expect(mockRepository.findAndCount).toHaveBeenCalledWith({
+        order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 10,
+      });
+    });
+
+    it('should calculate pagination for later pages', async () => {
+      const expectedUsers = createTestUserList(2);
+      mockRepository.findAndCount.mockResolvedValue([expectedUsers, 12]);
+
+      const result = await service.findAllPaginated(2, 5);
+
+      expect(result.meta).toEqual({
+        page: 2,
+        limit: 5,
+        total: 12,
+        totalPages: 3,
+        hasNextPage: true,
+        hasPreviousPage: true,
+      });
+      expect(mockRepository.findAndCount).toHaveBeenCalledWith({
+        order: { createdAt: 'DESC' },
+        skip: 5,
+        take: 5,
+      });
+    });
+
+    it('should clamp invalid pagination values', async () => {
+      mockRepository.findAndCount.mockResolvedValue([[], 0]);
+
+      const result = await service.findAllPaginated(0, 200);
+
+      expect(result.meta.page).toBe(1);
+      expect(result.meta.limit).toBe(100);
+      expect(mockRepository.findAndCount).toHaveBeenCalledWith({
+        order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 100,
+      });
+    });
+  });
+
   describe('findById', () => {
     describe('success scenarios', () => {
       it('should return user when valid ID is provided', async () => {

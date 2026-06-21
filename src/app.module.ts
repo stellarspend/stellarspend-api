@@ -16,6 +16,8 @@ import { TransactionsModule } from "./modules/transactions/transactions.module";
 import { WalletModule } from "./modules/wallet/wallet.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
+import { AdminModule } from "./modules/admin/admin.module";
+import { AuthModule } from "./modules/auth/auth.module";
 import { QueueModule } from "./queue/queue.module";
 import { databaseConfig } from "./config/database.config";
 import { APP_GUARD } from "@nestjs/core";
@@ -70,6 +72,8 @@ class ProtectedRoutesThrottlerGuard extends ThrottlerGuard {
     }),
     
     QueueModule,
+    AuthModule,
+    AdminModule,
     UsersModule,
     TransactionsModule,
     WalletModule,

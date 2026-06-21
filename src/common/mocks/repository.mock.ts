@@ -6,6 +6,7 @@
 export interface MockRepository<T> {
   find: jest.Mock<Promise<T[]>>;
   findOne: jest.Mock<Promise<T | null>>;
+  findAndCount: jest.Mock<Promise<[T[], number]>>;
   findByUserId: jest.Mock<Promise<T[]>>;
   findByDateRange: jest.Mock<Promise<T[]>>;
   findByCategory: jest.Mock<Promise<T[]>>;
@@ -23,6 +24,7 @@ export function createMockRepository<T>(): MockRepository<T> {
   return {
     find: jest.fn(),
     findOne: jest.fn(),
+    findAndCount: jest.fn(),
     findByUserId: jest.fn(),
     findByDateRange: jest.fn(),
     findByCategory: jest.fn(),

@@ -5,13 +5,32 @@
 
 import { User } from './user.entity';
 
+export interface UserFindAndCountOptions {
+  order?: Record<string, 'ASC' | 'DESC'>;
+  skip?: number;
+  take?: number;
+}
+
 export interface UserRepository {
   find(): Promise<User[]>;
   findOne(id: string): Promise<User | null>;
   findOneBy?(criteria: Partial<User>): Promise<User | null>;
+  findAndCount?(options: UserFindAndCountOptions): Promise<[User[], number]>;
   create(user: Partial<User>): Promise<User>;
   update(id: string, user: Partial<User>): Promise<User>;
   delete(id: string): Promise<boolean>;
+}
+
+export interface PaginatedUsersResult {
+  data: User[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export class ValidationError extends Error {
@@ -44,6 +63,44 @@ export class UsersService {
    */
   async findAll(): Promise<User[]> {
     return this.repository.find();
+  }
+
+  /**
+   * Retrieves users with pagination metadata
+   * @param page - Page number (default: 1)
+   * @param limit - Items per page (default: 10, max: 100)
+   * @returns Promise resolving to paginated users with metadata
+   */
+  async findAllPaginated(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedUsersResult> {
+    const validatedPage = Math.max(1, page);
+    const validatedLimit = Math.min(100, Math.max(1, limit));
+
+    if (!this.repository.findAndCount) {
+      throw new Error('Repository does not support pagination');
+    }
+
+    const [data, total] = await this.repository.findAndCount({
+      order: { createdAt: 'DESC' },
+      skip: (validatedPage - 1) * validatedLimit,
+      take: validatedLimit,
+    });
+
+    const totalPages = Math.ceil(total / validatedLimit);
+
+    return {
+      data,
+      meta: {
+        page: validatedPage,
+        limit: validatedLimit,
+        total,
+        totalPages,
+        hasNextPage: validatedPage < totalPages,
+        hasPreviousPage: validatedPage > 1,
+      },
+    };
   }
 
   /**

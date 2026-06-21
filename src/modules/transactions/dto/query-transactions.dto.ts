@@ -8,7 +8,6 @@ import {
   IsIn,
   IsUUID,
   IsDate,
-  IsPositive,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
