@@ -3,14 +3,25 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wallet } from '../wallet/wallet.entity';
+import { User } from '../users/user.entity';
 import { Keypair } from '@stellar/stellar-sdk';
 import { LoginDto } from './dto/login.dto';
+import { randomBytes } from 'crypto';
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  publicKey: string;
+  userId: string;
+}
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Wallet)
     private walletRepository: Repository<Wallet>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     private jwtService: JwtService,
   ) {}
 
