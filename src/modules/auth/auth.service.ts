@@ -6,6 +6,14 @@ import { Wallet } from '../wallet/wallet.entity';
 import { User } from '../users/user.entity';
 import { Keypair } from '@stellar/stellar-sdk';
 import { LoginDto } from './dto/login.dto';
+import { randomBytes } from 'crypto';
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  publicKey: string;
+  userId: string;
+}
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_DURATION_MINUTES = 15;
@@ -111,15 +119,68 @@ export class AuthService {
 
     this.logger.log(`Successful login for user: ${user.id}`);
 
-    // Generate JWT token
+    const user = await this.userRepository.findOne({ where: { id: wallet.userId } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const payload = { publicKey: wallet.publicKey, sub: wallet.userId };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = this.generateAccessToken(payload);
+    const { token: refreshToken, expiry: refreshTokenExpiry } = this.createRefreshToken();
+
+    await this.userRepository.update(user.id, {
+      refreshToken,
+      refreshTokenExpiry,
+    });
 
     return {
       accessToken,
+      refreshToken,
       publicKey: wallet.publicKey,
       userId: wallet.userId,
     };
+  }
+
+  async refresh(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+
+    const user = await this.userRepository.findOne({ where: { refreshToken } });
+    if (!user || !user.refreshTokenExpiry || user.refreshTokenExpiry.getTime() <= Date.now()) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const wallet = await this.walletRepository.findOne({ where: { userId: user.id } });
+    if (!wallet) {
+      throw new UnauthorizedException('Wallet not found');
+    }
+
+    const payload = { publicKey: wallet.publicKey, sub: user.id };
+    const accessToken = this.generateAccessToken(payload);
+    const { token: newRefreshToken, expiry: refreshTokenExpiry } = this.createRefreshToken();
+
+    await this.userRepository.update(user.id, {
+      refreshToken: newRefreshToken,
+      refreshTokenExpiry,
+    });
+
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      publicKey: wallet.publicKey,
+      userId: user.id,
+    };
+  }
+
+  private generateAccessToken(payload: { publicKey: string; sub: string }): string {
+    return this.jwtService.sign(payload);
+  }
+
+  private createRefreshToken(): { token: string; expiry: Date } {
+    const token = randomBytes(48).toString('hex');
+    const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    return { token, expiry };
   }
 
   private async verifySignature(

@@ -25,6 +25,11 @@ export class User {
   @Column({ type: 'varchar', length: 500, nullable: true })
   suspensionReason: string | null;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  refreshToken: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  refreshTokenExpiry: Date | null;
   @Column({ type: 'int', default: 0 })
   failedLoginAttempts: number;
 

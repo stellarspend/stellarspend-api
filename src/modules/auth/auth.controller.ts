@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RefreshDto } from './dto/refresh.dto';
 import {
   AUTH_LOGIN_THROTTLE,
   AUTH_THROTTLE,
@@ -18,12 +19,22 @@ export class AuthController {
   @Throttle(AUTH_LOGIN_THROTTLE)
   @ApiOperation({ summary: 'Login with Stellar wallet signature' })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({ status: 201, description: 'Login successful, returns access token' })
+  @ApiResponse({ status: 201, description: 'Login successful, returns access and refresh tokens' })
   @ApiResponse({ status: 401, description: 'Invalid signature or wallet not found' })
   @ApiResponse({ status: 400, description: 'Invalid request body' })
   @ApiResponse({ status: 429, description: 'Too many login attempts' })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Rotate refresh token and issue a new access token' })
+  @ApiBody({ type: RefreshDto })
+  @ApiResponse({ status: 200, description: 'Refresh successful, returns new access and refresh tokens' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  @ApiResponse({ status: 400, description: 'Invalid request body' })
+  async refresh(@Body() refreshDto: RefreshDto) {
+    return this.authService.refresh(refreshDto.refreshToken);
   }
 
   @Get()
