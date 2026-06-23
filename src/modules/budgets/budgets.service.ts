@@ -3,7 +3,12 @@
  * Handles business logic for budget management with CRUD operations
  */
 
+import { Injectable, Optional } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Budget } from '../../common/test-utils/fixtures';
+import { Transaction } from '../transactions/transaction.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 export interface BudgetRepository {
   find(): Promise<Budget[]>;
@@ -30,8 +35,16 @@ export class NotFoundError extends Error {
   }
 }
 
+@Injectable()
 export class BudgetsService {
-  constructor(private readonly repository: BudgetRepository) {}
+  constructor(
+    private readonly repository: BudgetRepository,
+    @Optional()
+    private readonly notificationsService?: NotificationsService,
+    @Optional()
+    @InjectRepository(Transaction)
+    private readonly transactionRepository?: Repository<Transaction>,
+  ) {}
 
   /**
    * Retrieves all budgets
@@ -42,6 +55,63 @@ export class BudgetsService {
   }
 
   /**
+   * Checks the budget usage and triggers alerts at 80% and 100% thresholds
+   * @param budget - The budget to check usage for
+   */
+  private async checkAndTriggerOverspendAlerts(budget: Budget): Promise<void> {
+    if (!this.notificationsService || !this.transactionRepository) {
+      return;
+    }
+
+    try {
+      const assetCode = budget.assetCode || 'XLM';
+      const result = (await this.transactionRepository
+        .createQueryBuilder('transaction')
+        .select('SUM(transaction.amount)', 'sum')
+        .where('transaction.userId = :userId', { userId: budget.userId })
+        .andWhere('transaction.category = :category', { category: budget.category })
+        .andWhere('transaction.assetCode = :assetCode', { assetCode })
+        .andWhere('transaction.stellarCreatedAt >= :startDate', { startDate: budget.startDate })
+        .andWhere('transaction.stellarCreatedAt <= :endDate', { endDate: budget.endDate })
+        .andWhere('transaction.status = :status', { status: 'completed' })
+        .getRawOne()) as unknown as { sum: string | number | null } | undefined;
+
+      const spent = Number(result?.sum || 0);
+      const usagePercent = budget.limit > 0 ? (spent / budget.limit) * 100 : 0;
+
+      if (usagePercent >= 80) {
+        const categoryKey = `budget-alert-80-${budget.id}`;
+        const existing = await this.notificationsService.findOneByCategory(budget.userId, categoryKey);
+        if (!existing) {
+          await this.notificationsService.createBudgetAlertNotification(
+            budget.userId,
+            budget.id,
+            budget.category,
+            budget.limit,
+            80
+          );
+        }
+      }
+
+      if (usagePercent >= 100) {
+        const categoryKey = `budget-alert-100-${budget.id}`;
+        const existing = await this.notificationsService.findOneByCategory(budget.userId, categoryKey);
+        if (!existing) {
+          await this.notificationsService.createBudgetAlertNotification(
+            budget.userId,
+            budget.id,
+            budget.category,
+            budget.limit,
+            100
+          );
+        }
+      }
+    } catch {
+      // Catch error to make sure notification/query failure doesn't block critical CRUD flows
+    }
+  }
+
+  /**
    * Finds a budget by ID
    * @param id - Budget ID to search for
    * @returns Promise resolving to budget or null if not found
@@ -49,7 +119,11 @@ export class BudgetsService {
    */
   async findById(id: string): Promise<Budget | null> {
     this.validateId(id);
-    return this.repository.findOne(id);
+    const budget = await this.repository.findOne(id);
+    if (budget) {
+      await this.checkAndTriggerOverspendAlerts(budget);
+    }
+    return budget;
   }
 
   /**
@@ -60,7 +134,11 @@ export class BudgetsService {
    */
   async findByUserId(userId: string): Promise<Budget[]> {
     this.validateUserId(userId);
-    return this.repository.findByUserId(userId);
+    const budgets = await this.repository.findByUserId(userId);
+    for (const budget of budgets) {
+      await this.checkAndTriggerOverspendAlerts(budget);
+    }
+    return budgets;
   }
 
   /**
@@ -100,7 +178,9 @@ export class BudgetsService {
       updatedAt: new Date()
     };
     
-    return this.repository.create(budget);
+    const created = await this.repository.create(budget);
+    await this.checkAndTriggerOverspendAlerts(created);
+    return created;
   }
 
   /**
@@ -125,7 +205,9 @@ export class BudgetsService {
       updatedAt: new Date()
     };
     
-    return this.repository.update(id, updatedBudget);
+    const updated = await this.repository.update(id, updatedBudget);
+    await this.checkAndTriggerOverspendAlerts(updated);
+    return updated;
   }
 
   /**
