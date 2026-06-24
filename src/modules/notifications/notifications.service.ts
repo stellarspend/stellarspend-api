@@ -84,6 +84,33 @@ export class NotificationsService {
     });
   }
 
+  async findOneByCategory(userId: string, category: string): Promise<Notification | null> {
+    return await this.notificationRepository.findOne({
+      where: { userId, category },
+    });
+  }
+
+  async createBudgetAlertNotification(
+    userId: string,
+    budgetId: string,
+    categoryName: string,
+    limit: number,
+    usagePercent: 80 | 100
+  ): Promise<Notification> {
+    const title = usagePercent === 100 ? 'Budget Limit Exceeded! ⚠️' : 'Budget Limit Approaching! ⚠️';
+    const message = usagePercent === 100
+      ? `You have spent 100% or more of your budget limit ($${limit.toFixed(2)}) for category "${categoryName}".`
+      : `You have reached 80% or more of your budget limit ($${limit.toFixed(2)}) for category "${categoryName}".`;
+    
+    return await this.create({
+      userId,
+      title,
+      message,
+      type: usagePercent === 100 ? 'error' : 'warning',
+      category: `budget-alert-${usagePercent}-${budgetId}`,
+    });
+  }
+
   getStatus() {
     return { module: 'Notifications', status: 'Working' };
   }

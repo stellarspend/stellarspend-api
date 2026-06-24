@@ -1594,4 +1594,96 @@ describe('BudgetsService', () => {
       });
     });
   });
+
+  describe('budget overspend alerts', () => {
+    let mockNotificationsService: any;
+    let mockTransactionRepository: any;
+    let serviceWithAlerts: BudgetsService;
+    let mockQueryBuilder: any;
+    const budgetId = '123e4567-e89b-42d3-a456-426614174000';
+    const userId = '123e4567-e89b-42d3-a456-426614174001';
+
+    beforeEach(() => {
+      mockNotificationsService = {
+        findOneByCategory: jest.fn(),
+        createBudgetAlertNotification: jest.fn(),
+      };
+
+      mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn(),
+      };
+
+      mockTransactionRepository = {
+        createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+      };
+
+      serviceWithAlerts = new BudgetsService(
+        mockRepository as unknown as BudgetRepository,
+        mockNotificationsService,
+        mockTransactionRepository
+      );
+    });
+
+    it('should do nothing if notificationsService or transactionRepository is not provided', async () => {
+      const budget = createTestBudget({ id: budgetId, limit: 100, userId });
+      mockRepository.findOne.mockResolvedValue(budget);
+
+      const result = await service.findById(budget.id);
+      expect(result).toEqual(budget);
+      expect(mockTransactionRepository.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
+    it('should trigger 80% budget warning notification when spending >= 80% and < 100%', async () => {
+      const budget = createTestBudget({ id: budgetId, limit: 100, userId, category: 'groceries', assetCode: 'XLM' });
+      mockRepository.findOne.mockResolvedValue(budget);
+      mockQueryBuilder.getRawOne.mockResolvedValue({ sum: 85 });
+      mockNotificationsService.findOneByCategory.mockResolvedValue(null);
+
+      const result = await serviceWithAlerts.findById(budget.id);
+      expect(result).toEqual(budget);
+      
+      expect(mockTransactionRepository.createQueryBuilder).toHaveBeenCalledWith('transaction');
+      expect(mockNotificationsService.findOneByCategory).toHaveBeenCalledWith(userId, `budget-alert-80-${budgetId}`);
+      expect(mockNotificationsService.createBudgetAlertNotification).toHaveBeenCalledWith(
+        userId,
+        budgetId,
+        'groceries',
+        100,
+        80
+      );
+    });
+
+    it('should trigger 100% budget warning notification when spending >= 100%', async () => {
+      const budget = createTestBudget({ id: budgetId, limit: 100, userId, category: 'groceries', assetCode: 'XLM' });
+      mockRepository.findOne.mockResolvedValue(budget);
+      mockQueryBuilder.getRawOne.mockResolvedValue({ sum: 110 });
+      mockNotificationsService.findOneByCategory.mockResolvedValue(null);
+
+      await serviceWithAlerts.findById(budget.id);
+      
+      expect(mockNotificationsService.findOneByCategory).toHaveBeenCalledWith(userId, `budget-alert-100-${budgetId}`);
+      expect(mockNotificationsService.createBudgetAlertNotification).toHaveBeenCalledWith(
+        userId,
+        budgetId,
+        'groceries',
+        100,
+        100
+      );
+    });
+
+    it('should not duplicate notifications on repeated checks', async () => {
+      const budget = createTestBudget({ id: budgetId, limit: 100, userId, category: 'groceries', assetCode: 'XLM' });
+      mockRepository.findOne.mockResolvedValue(budget);
+      mockQueryBuilder.getRawOne.mockResolvedValue({ sum: 90 });
+      mockNotificationsService.findOneByCategory.mockResolvedValue({ id: 'notif-id' });
+
+      await serviceWithAlerts.findById(budget.id);
+      
+      expect(mockNotificationsService.findOneByCategory).toHaveBeenCalledWith(userId, `budget-alert-80-${budgetId}`);
+      expect(mockNotificationsService.createBudgetAlertNotification).not.toHaveBeenCalled();
+    });
+  });
 });
