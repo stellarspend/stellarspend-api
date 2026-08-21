@@ -9,6 +9,10 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<{ headers: { authorization?: string } }>();
     const token = request.headers.authorization?.replace('Bearer ', '');
     if (!token) throw new UnauthorizedException('Bearer token required');
-    try { this.jwt.verify(token); return true; } catch { throw new UnauthorizedException('Invalid token'); }
+    try { 
+      const payload = this.jwt.verify(token); 
+      (request as any).user = payload;
+      return true; 
+    } catch { throw new UnauthorizedException('Invalid token'); }
   }
 }

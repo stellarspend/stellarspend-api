@@ -8,6 +8,8 @@ export class SavingsGoalEntity {
   @Column('uuid') userId!: string;
   /** Human-readable goal name. */
   @Column() name!: string;
+  /** Currency/asset identifier. */
+  @Column({ type: 'varchar', length: 12, default: 'XLM' }) asset!: string;
   /** Target represented as a database numeric. */
   @Column({ type: 'numeric', precision: 30, scale: 12 }) targetAmount!: string;
   /** Current contribution represented as a database numeric. */
