@@ -13,3 +13,10 @@ __v0_jsx-dev-runtime.ts
 node_modules
 .next/
 .DS_Store
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Dependency lock file (optional - uncomment if you want to ignore it)
+# package-lock.json
