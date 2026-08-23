@@ -1,5 +1,4 @@
 import { createParamDecorator, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 
 /**
  * Extracts the authenticated user's ID (JWT `sub` claim) from the bearer token.

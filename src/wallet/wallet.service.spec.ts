@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { WalletEntity } from './entities/wallet.entity';
-import { TransactionEntity } from '../transactions/entities/transaction.entity';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -27,48 +26,7 @@ function makeWallet(overrides: Partial<WalletEntity> = {}): WalletEntity {
   } as WalletEntity;
 }
 
-/** Builds a mock TypeORM repository. */
-function makeRepo<T>(overrides: Partial<Record<string, jest.Mock>> = {}) {
-  return {
-    findOne: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-    createQueryBuilder: jest.fn(),
-    ...overrides,
-  } as unknown as jest.Mocked<Record<string, jest.Mock>>;
-}
-
-/** Builds a mock DataSource (unused in current impl but required by DI). */
-function makeDataSource() {
-  return {} as unknown;
-}
-
-/** Builds a mock BlockchainService. */
-function makeBlockchain(balances: unknown[] = []) {
-  return { getBalances: jest.fn().mockResolvedValue(balances) };
-}
-
-/** Builds a WalletService wired to provided mocks. */
-function buildService({
-  walletRepo = makeRepo(),
-  txRepo = makeRepo(),
-  blockchain = makeBlockchain(),
-  dataSource = makeDataSource(),
-}: {
-  walletRepo?: ReturnType<typeof makeRepo>;
-  txRepo?: ReturnType<typeof makeRepo>;
-  blockchain?: ReturnType<typeof makeBlockchain>;
-  dataSource?: unknown;
-} = {}) {
-  return new WalletService(
-    walletRepo as unknown as Parameters<typeof WalletService.prototype['linkWallet']>[0] extends string ? never : never,
-    txRepo as never,
-    blockchain as never,
-    dataSource as never,
-  );
-}
-
-// ── Re-usable factory avoiding the type gymnastics above ──────────────────────
+// ── Re-usable factory ─────────────────────────────────────────────────────────
 
 function makeService(opts: {
   walletFindOne?: jest.Mock;
