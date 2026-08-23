@@ -13,3 +13,10 @@ __v0_jsx-dev-runtime.ts
 node_modules
 .next/
 .DS_Store
+
+# Build outputs
+dist/
+*.js
+*.d.ts
+*.js.map
+*.tsbuildinfo
