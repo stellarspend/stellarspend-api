@@ -1,9 +1,18 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { WalletService } from './wallet.service';
+
 /** Exposes the wallet API surface. */
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly service: WalletService) {}
-  /** Reports module availability for operations and smoke tests. */
-  @Get('status') status(): { module: string; status: string } { return this.service.status(); }
+
+  @Get('status')
+  status(): { module: string; status: string } {
+    return this.service.status();
+  }
+
+  @Get('balance')
+  getBalance(@Query('publicKey') publicKey: string) {
+    return this.service.getBalances(publicKey);
+  }
 }

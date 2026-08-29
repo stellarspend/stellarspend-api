@@ -1,13 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from '@jest/globals';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 // ASSUMPTION: confirm actual entity file path/name.
 import { TransactionEntity } from './entities/transaction.entity';
+import { CacheService } from '../cache/cache.service';
 
 describe('TransactionsService', () => {
   let service: TransactionsService;
   let repo: any;
+  
 
   const mockQueryBuilder = {
     insert: jest.fn().mockReturnThis(),
@@ -15,17 +25,21 @@ describe('TransactionsService', () => {
     values: jest.fn().mockReturnThis(),
     orIgnore: jest.fn().mockReturnThis(),
     returning: jest.fn().mockReturnThis(),
-    execute: jest.fn(),
+    execute: jest.fn<
+      () => Promise<{ raw: Array<{ id: string }> }>
+    >(),
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
     take: jest.fn().mockReturnThis(),
-    getManyAndCount: jest.fn(),
+    getManyAndCount: jest.fn<() => Promise<[any[], number]>>(),
     select: jest.fn().mockReturnThis(),
     addSelect: jest.fn().mockReturnThis(),
     groupBy: jest.fn().mockReturnThis(),
-    getRawMany: jest.fn(),
+    getRawMany: jest.fn<
+      () => Promise<Array<{ category: string; total: string }>>
+    >(),
   };
 
   beforeEach(async () => {
@@ -36,13 +50,24 @@ describe('TransactionsService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        TransactionsService,
-        { provide: getRepositoryToken(TransactionEntity), useValue: repo },
-      ],
-    }).compile();
+  providers: [
+    TransactionsService,
+    { provide: getRepositoryToken(TransactionEntity), useValue: repo },
+    {
+      provide: CacheService,
+      useValue: {
+        get: jest.fn(),
+        set: jest.fn(),
+        del: jest.fn(),
+        delByPattern: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+  
+      },
+    },
+   ],
+  }).compile();
 
     service = module.get<TransactionsService>(TransactionsService);
+   
 
     // Stub the Horizon client the service constructs internally so tests
     // never make real network calls. Overridden per-test below.
@@ -51,7 +76,9 @@ describe('TransactionsService', () => {
         forAccount: () => ({
           order: () => ({
             limit: () => ({
-              call: jest.fn().mockResolvedValue({ records: [] }),
+              call: jest
+                .fn<() => Promise<{ records: unknown[] }>>()
+                .mockResolvedValue({ records: [] }),
             }),
           }),
         }),
@@ -59,7 +86,9 @@ describe('TransactionsService', () => {
     };
   });
 
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
   describe('syncTransactions', () => {
     it('inserts only new rows and returns the count actually inserted (dedup via ON CONFLICT)', async () => {
@@ -87,7 +116,9 @@ describe('TransactionsService', () => {
         forAccount: () => ({
           order: () => ({
             limit: () => ({
-              call: jest.fn().mockResolvedValue(mockPage),
+              call: jest
+                .fn<() => Promise<{ records: unknown[] }>>()
+                .mockResolvedValue(mockPage),
             }),
           }),
         }),
@@ -133,7 +164,9 @@ describe('TransactionsService', () => {
         forAccount: () => ({
           order: () => ({
             limit: () => ({
-              call: jest.fn().mockResolvedValue(mockPage),
+              call: jest
+                .fn<() => Promise<{ records: unknown[] }>>()
+                .mockResolvedValue(mockPage),
             }),
           }),
         }),

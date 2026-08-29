@@ -1,6 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ProtectedController } from './protected.controller';
 import { ProtectedService } from './protected.service';
-/** Registers the protected feature. */
-@Module({ controllers: [ProtectedController], providers: [ProtectedService], exports: [ProtectedService] })
+import { AuthModule } from '../auth/auth.module';
+
+@Module({
+  imports: [AuthModule],
+  controllers: [ProtectedController],
+  providers: [ProtectedService],
+  exports: [ProtectedService],
+})
 export class ProtectedModule {}

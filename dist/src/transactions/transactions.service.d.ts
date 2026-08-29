@@ -1,5 +1,6 @@
 import { Repository } from 'typeorm';
 import { TransactionEntity } from './entities/transaction.entity';
+import { CacheService } from '../cache/cache.service';
 export interface SyncResult {
     synced: number;
 }
@@ -14,8 +15,9 @@ export interface SpendingByCategoryRow {
 /** Provides the transactions application capability. */
 export declare class TransactionsService {
     private readonly transactionsRepository;
+    private readonly cacheService;
     private readonly horizon;
-    constructor(transactionsRepository: Repository<TransactionEntity>);
+    constructor(transactionsRepository: Repository<TransactionEntity>, cacheService: CacheService);
     /** Returns a stable service health payload for this capability. */
     status(): {
         module: string;

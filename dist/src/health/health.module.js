@@ -9,11 +9,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthModule = void 0;
 const common_1 = require("@nestjs/common");
 const health_controller_1 = require("./health.controller");
+const health_service_1 = require("./health.service");
+const cache_module_1 = require("../cache/cache.module");
 /** Registers health probes. */
 let HealthModule = class HealthModule {
 };
 exports.HealthModule = HealthModule;
 exports.HealthModule = HealthModule = __decorate([
-    (0, common_1.Module)({ controllers: [health_controller_1.HealthController] })
+    (0, common_1.Module)({
+        imports: [cache_module_1.CacheModule],
+        controllers: [health_controller_1.HealthController],
+        providers: [health_service_1.HealthService],
+    })
 ], HealthModule);
 //# sourceMappingURL=health.module.js.map

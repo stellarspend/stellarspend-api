@@ -9,6 +9,8 @@ import { Repository } from 'typeorm';
 // package exports `Horizon.Server`, not a flat `Server` export.
 import { Horizon } from '@stellar/stellar-sdk';
 import { TransactionEntity } from './entities/transaction.entity';
+import { CacheService } from '../cache/cache.service';
+
 
 // Matches the fallback URL used in BlockchainService (process.env.HORIZON_URL ??
 // this default). Kept as a local constant for now — see note below.
@@ -36,6 +38,7 @@ export class TransactionsService {
   constructor(
     @InjectRepository(TransactionEntity)
     private readonly transactionsRepository: Repository<TransactionEntity>,
+    private readonly cacheService: CacheService,
   ) {}
 
   /** Returns a stable service health payload for this capability. */
@@ -97,6 +100,11 @@ export class TransactionsService {
       .returning(['id'])
       .execute();
 
+      if (result.raw.length > 0) {
+    await this.cacheService.delByPattern(
+    `transactions:${userId}:*`,
+   );
+   }
     return { synced: result.raw.length };
   }
 
@@ -109,6 +117,14 @@ export class TransactionsService {
     options: { page: number; limit: number; category?: string; asset?: string },
   ): Promise<PaginatedHistory> {
     const { page, limit, category, asset } = options;
+
+    const cacheKey = `transactions:${userId}:${page}:${limit}:${category ?? ''}:${asset ?? ''}`;
+
+   const cached = await this.cacheService.get<PaginatedHistory>(cacheKey);
+
+    if (cached) {
+    return cached;
+  }
 
     const qb = this.transactionsRepository
       .createQueryBuilder('t')
@@ -127,7 +143,11 @@ export class TransactionsService {
 
     const [data, total] = await qb.getManyAndCount();
 
-    return { data, total };
+    const result = { data, total };
+
+    await this.cacheService.set(cacheKey, result, 60);
+
+    return result;
   }
 
   /**

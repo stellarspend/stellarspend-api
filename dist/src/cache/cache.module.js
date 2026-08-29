@@ -10,11 +10,14 @@ exports.CacheModule = void 0;
 const common_1 = require("@nestjs/common");
 const cache_controller_1 = require("./cache.controller");
 const cache_service_1 = require("./cache.service");
-/** Registers the cache feature. */
 let CacheModule = class CacheModule {
 };
 exports.CacheModule = CacheModule;
 exports.CacheModule = CacheModule = __decorate([
-    (0, common_1.Module)({ controllers: [cache_controller_1.CacheController], providers: [cache_service_1.CacheService], exports: [cache_service_1.CacheService] })
+    (0, common_1.Module)({
+        controllers: [cache_controller_1.CacheController],
+        providers: [cache_service_1.CacheService],
+        exports: [cache_service_1.CacheService],
+    })
 ], CacheModule);
 //# sourceMappingURL=cache.module.js.map

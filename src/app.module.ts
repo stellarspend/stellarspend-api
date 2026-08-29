@@ -26,15 +26,28 @@ import { HealthModule } from './health/health.module';
 import { TranslationModule } from './translation/translation.module';
 import { AccessibilityModule } from './accessibility/accessibility.module';
 import { ProtectedModule } from './protected/protected.module';
+import { AppConfigModule } from './common/config/config.module';
 
-/** Composes all StellarSpend feature and platform modules. */
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration], validationSchema: configurationValidationSchema }),
-    TypeOrmModule.forRootAsync({ inject: [TypedConfigService], useFactory: (config: TypedConfigService) => ({ type: 'postgres', host: config.get('DB_HOST', 'localhost'), port: config.getNumber('DB_PORT', 5432), username: config.get('DB_USERNAME', 'postgres'), password: config.get('DB_PASSWORD', 'postgres'), database: config.get('DB_NAME', 'stellarspend'), autoLoadEntities: true, synchronize: false, migrationsRun: false }) }),
-    AuthModule, UsersModule, WalletModule, BlockchainModule, TransactionsModule, BudgetsModule, BudgetAllocationModule, SavingsModule, CurrencyConversionModule, NotificationModule, MailModule, AnalyticsModule, AdminModule, SettingsModule, AuditModule, SecurityModule, CacheModule, LoggingModule, HealthModule, TranslationModule, AccessibilityModule, ProtectedModule,
+    AppConfigModule,
+    TypeOrmModule.forRootAsync({
+      imports: [AppConfigModule],
+      inject: [TypedConfigService],
+      useFactory: (config: TypedConfigService) => ({
+        type: 'postgres',
+        host: config.get('DB_HOST', 'localhost'),
+        port: config.getNumber('DB_PORT', 5432),
+        username: config.get('DB_USERNAME', 'postgres'),
+        password: config.get('DB_PASSWORD', 'postgres'),
+        database: config.get('DB_NAME', 'stellarspend'),
+        autoLoadEntities: true,
+        synchronize: false,
+        migrationsRun: false,
+      }),
+    }),
+    AuthModule, UsersModule, WalletModule, BlockchainModule, TransactionsModule, BudgetsModule, BudgetAllocationModule, SavingsModule, CurrencyConversionModule, NotificationModule, MailModule, AnalyticsModule, AnalyticsSystemModule, AdminModule, SettingsModule, AuditModule, SecurityModule, CacheModule, LoggingModule, HealthModule, TranslationModule, AccessibilityModule, ProtectedModule,
   ],
-  providers: [TypedConfigService],
-  exports: [TypedConfigService],
 })
 export class AppModule {}

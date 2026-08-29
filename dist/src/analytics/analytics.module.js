@@ -8,13 +8,21 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnalyticsModule = void 0;
 const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
 const analytics_controller_1 = require("./analytics.controller");
 const analytics_service_1 = require("./analytics.service");
+const cache_module_1 = require("../cache/cache.module");
+const transaction_entity_1 = require("../transactions/entities/transaction.entity");
 /** Registers the analytics feature. */
 let AnalyticsModule = class AnalyticsModule {
 };
 exports.AnalyticsModule = AnalyticsModule;
 exports.AnalyticsModule = AnalyticsModule = __decorate([
-    (0, common_1.Module)({ controllers: [analytics_controller_1.AnalyticsController], providers: [analytics_service_1.AnalyticsService], exports: [analytics_service_1.AnalyticsService] })
+    (0, common_1.Module)({
+        imports: [cache_module_1.CacheModule, typeorm_1.TypeOrmModule.forFeature([transaction_entity_1.TransactionEntity])],
+        controllers: [analytics_controller_1.AnalyticsController],
+        providers: [analytics_service_1.AnalyticsService],
+        exports: [analytics_service_1.AnalyticsService],
+    })
 ], AnalyticsModule);
 //# sourceMappingURL=analytics.module.js.map

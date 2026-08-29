@@ -10,11 +10,16 @@ exports.ProtectedModule = void 0;
 const common_1 = require("@nestjs/common");
 const protected_controller_1 = require("./protected.controller");
 const protected_service_1 = require("./protected.service");
-/** Registers the protected feature. */
+const auth_module_1 = require("../auth/auth.module");
 let ProtectedModule = class ProtectedModule {
 };
 exports.ProtectedModule = ProtectedModule;
 exports.ProtectedModule = ProtectedModule = __decorate([
-    (0, common_1.Module)({ controllers: [protected_controller_1.ProtectedController], providers: [protected_service_1.ProtectedService], exports: [protected_service_1.ProtectedService] })
+    (0, common_1.Module)({
+        imports: [auth_module_1.AuthModule],
+        controllers: [protected_controller_1.ProtectedController],
+        providers: [protected_service_1.ProtectedService],
+        exports: [protected_service_1.ProtectedService],
+    })
 ], ProtectedModule);
 //# sourceMappingURL=protected.module.js.map

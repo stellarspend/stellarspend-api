@@ -20,15 +20,18 @@ const typeorm_2 = require("typeorm");
 // package exports `Horizon.Server`, not a flat `Server` export.
 const stellar_sdk_1 = require("@stellar/stellar-sdk");
 const transaction_entity_1 = require("./entities/transaction.entity");
+const cache_service_1 = require("../cache/cache.service");
 // Matches the fallback URL used in BlockchainService (process.env.HORIZON_URL ??
 // this default). Kept as a local constant for now — see note below.
 const HORIZON_URL = process.env.HORIZON_URL ?? 'https://horizon-testnet.stellar.org';
 /** Provides the transactions application capability. */
 let TransactionsService = class TransactionsService {
     transactionsRepository;
+    cacheService;
     horizon = new stellar_sdk_1.Horizon.Server(HORIZON_URL);
-    constructor(transactionsRepository) {
+    constructor(transactionsRepository, cacheService) {
         this.transactionsRepository = transactionsRepository;
+        this.cacheService = cacheService;
     }
     /** Returns a stable service health payload for this capability. */
     status() {
@@ -77,6 +80,9 @@ let TransactionsService = class TransactionsService {
             .orIgnore()
             .returning(['id'])
             .execute();
+        if (result.raw.length > 0) {
+            await this.cacheService.delByPattern(`transactions:${userId}:*`);
+        }
         return { synced: result.raw.length };
     }
     /**
@@ -85,6 +91,11 @@ let TransactionsService = class TransactionsService {
      */
     async getHistory(userId, options) {
         const { page, limit, category, asset } = options;
+        const cacheKey = `transactions:${userId}:${page}:${limit}:${category ?? ''}:${asset ?? ''}`;
+        const cached = await this.cacheService.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
         const qb = this.transactionsRepository
             .createQueryBuilder('t')
             .where('t.userId = :userId', { userId })
@@ -98,7 +109,9 @@ let TransactionsService = class TransactionsService {
             qb.andWhere('t.asset = :asset', { asset });
         }
         const [data, total] = await qb.getManyAndCount();
-        return { data, total };
+        const result = { data, total };
+        await this.cacheService.set(cacheKey, result, 60);
+        return result;
     }
     /**
      * Updates the category on a single transaction. Throws NotFoundException
@@ -139,6 +152,7 @@ exports.TransactionsService = TransactionsService;
 exports.TransactionsService = TransactionsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(transaction_entity_1.TransactionEntity)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        cache_service_1.CacheService])
 ], TransactionsService);
 //# sourceMappingURL=transactions.service.js.map

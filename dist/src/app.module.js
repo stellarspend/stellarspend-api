@@ -36,7 +36,7 @@ const health_module_1 = require("./health/health.module");
 const translation_module_1 = require("./translation/translation.module");
 const accessibility_module_1 = require("./accessibility/accessibility.module");
 const protected_module_1 = require("./protected/protected.module");
-/** Composes all StellarSpend feature and platform modules. */
+const config_module_1 = require("./common/config/config.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -44,11 +44,24 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true, load: [configuration_1.configuration], validationSchema: validation_1.configurationValidationSchema }),
-            typeorm_1.TypeOrmModule.forRootAsync({ inject: [typed_config_service_1.TypedConfigService], useFactory: (config) => ({ type: 'postgres', host: config.get('DB_HOST', 'localhost'), port: config.getNumber('DB_PORT', 5432), username: config.get('DB_USERNAME', 'postgres'), password: config.get('DB_PASSWORD', 'postgres'), database: config.get('DB_NAME', 'stellarspend'), autoLoadEntities: true, synchronize: false, migrationsRun: false }) }),
+            config_module_1.AppConfigModule,
+            typeorm_1.TypeOrmModule.forRootAsync({
+                imports: [config_module_1.AppConfigModule],
+                inject: [typed_config_service_1.TypedConfigService],
+                useFactory: (config) => ({
+                    type: 'postgres',
+                    host: config.get('DB_HOST', 'localhost'),
+                    port: config.getNumber('DB_PORT', 5432),
+                    username: config.get('DB_USERNAME', 'postgres'),
+                    password: config.get('DB_PASSWORD', 'postgres'),
+                    database: config.get('DB_NAME', 'stellarspend'),
+                    autoLoadEntities: true,
+                    synchronize: false,
+                    migrationsRun: false,
+                }),
+            }),
             auth_module_1.AuthModule, users_module_1.UsersModule, wallet_module_1.WalletModule, blockchain_module_1.BlockchainModule, transactions_module_1.TransactionsModule, budgets_module_1.BudgetsModule, budget_allocation_module_1.BudgetAllocationModule, savings_module_1.SavingsModule, currency_conversion_module_1.CurrencyConversionModule, notification_module_1.NotificationModule, mail_module_1.MailModule, analytics_module_1.AnalyticsModule, analytics_system_module_1.AnalyticsSystemModule, admin_module_1.AdminModule, settings_module_1.SettingsModule, audit_module_1.AuditModule, security_module_1.SecurityModule, cache_module_1.CacheModule, logging_module_1.LoggingModule, health_module_1.HealthModule, translation_module_1.TranslationModule, accessibility_module_1.AccessibilityModule, protected_module_1.ProtectedModule,
         ],
-        providers: [typed_config_service_1.TypedConfigService],
-        exports: [typed_config_service_1.TypedConfigService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

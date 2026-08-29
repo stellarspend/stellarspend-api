@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
-/** Provides the health application capability. */
+import { CacheService } from '../cache/cache.service';
+
 @Injectable()
 export class HealthService {
-  /** Returns a stable service health payload for this capability. */
-  status(): { module: string; status: string } { return { module: 'health', status: 'ready' }; }
+  constructor(private readonly cacheService: CacheService) {}
+
+  async check(): Promise<{ status: string; redis: 'ok' | 'degraded' }> {
+    const redisOk = await this.cacheService.isHealthy();
+    return {
+      status: redisOk ? 'ok' : 'degraded',
+      redis: redisOk ? 'ok' : 'degraded',
+    };
+  }
 }

@@ -11,10 +11,21 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthController = void 0;
 const common_1 = require("@nestjs/common");
+const health_service_1 = require("./health.service");
 /** Provides liveness and readiness probes. */
 let HealthController = class HealthController {
+    service;
+    constructor(service) {
+        this.service = service;
+    }
     /** Returns a liveness response without requiring a database. */
-    live() { return { status: 'ok' }; }
+    live() {
+        return { status: 'ok' };
+    }
+    /** Returns readiness including Redis connectivity. */
+    check() {
+        return this.service.check();
+    }
 };
 exports.HealthController = HealthController;
 __decorate([
@@ -23,7 +34,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Object)
 ], HealthController.prototype, "live", null);
+__decorate([
+    (0, common_1.Get)(),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], HealthController.prototype, "check", null);
 exports.HealthController = HealthController = __decorate([
-    (0, common_1.Controller)('health')
+    (0, common_1.Controller)('health'),
+    __metadata("design:paramtypes", [health_service_1.HealthService])
 ], HealthController);
 //# sourceMappingURL=health.controller.js.map

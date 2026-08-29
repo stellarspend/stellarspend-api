@@ -9,7 +9,7 @@ export const configurationValidationSchema = Joi.object({
   DB_USERNAME: Joi.string().default('postgres'), DB_PASSWORD: Joi.string().default('postgres'), DB_NAME: Joi.string().default('stellarspend'),
   JWT_SECRET: Joi.string().min(32).default('development-only-stellarspend-secret-32'),
   JWT_ACCESS_TTL: Joi.string().default('15m'), JWT_REFRESH_TTL: Joi.string().default('7d'),
-  REDIS_URL: Joi.string().default('redis://localhost:6379'),
+  REDIS_URL: Joi.string().uri().required(),
   STELLAR_NETWORK: Joi.string().valid('PUBLIC', 'TESTNET').default('TESTNET'),
   HORIZON_URL: Joi.string().uri().default('https://horizon-testnet.stellar.org'),
   SOROBAN_RPC_URL: Joi.string().uri().default('https://soroban-testnet.stellar.org'),

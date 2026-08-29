@@ -1,8 +1,12 @@
-/** Provides the wallet application capability. */
+import { BlockchainService } from '../blockchain/blockchain.service';
+import { CacheService } from '../cache/cache.service';
 export declare class WalletService {
-    /** Returns a stable service health payload for this capability. */
+    private readonly blockchainService;
+    private readonly cacheService;
+    constructor(blockchainService: BlockchainService, cacheService: CacheService);
     status(): {
         module: string;
         status: string;
     };
+    getBalances(publicKey: string): Promise<unknown[]>;
 }

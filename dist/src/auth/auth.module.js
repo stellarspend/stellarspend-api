@@ -16,6 +16,6 @@ let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
-    (0, common_1.Module)({ imports: [jwt_1.JwtModule.register({ secret: process.env.JWT_SECRET ?? 'development-only-stellarspend-secret-32', signOptions: { expiresIn: '15m' } })], controllers: [auth_controller_1.AuthController], providers: [auth_service_1.AuthService], exports: [auth_service_1.AuthService] })
+    (0, common_1.Module)({ imports: [jwt_1.JwtModule.register({ secret: process.env.JWT_SECRET ?? 'development-only-stellarspend-secret-32', signOptions: { expiresIn: '15m' } })], controllers: [auth_controller_1.AuthController], providers: [auth_service_1.AuthService], exports: [auth_service_1.AuthService, jwt_1.JwtModule] })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

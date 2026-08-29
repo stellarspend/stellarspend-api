@@ -3,9 +3,9 @@ import { AnalyticsService } from './analytics.service';
 export declare class AnalyticsController {
     private readonly service;
     constructor(service: AnalyticsService);
-    /** Reports module availability for operations and smoke tests. */
     status(): {
         module: string;
         status: string;
     };
+    getTrend(userId: string, asset: string, weeks?: string): Promise<import("./analytics.service").SpendingTrendPoint[]>;
 }

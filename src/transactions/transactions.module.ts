@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TransactionEntity } from './entities/transaction.entity';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
-import { TransactionEntity } from './entities/transaction.entity';
+import { CacheModule } from '../cache/cache.module';
+import { AuthModule } from '../auth/auth.module';
 
-/** Registers the transactions feature. */
 @Module({
-  imports: [TypeOrmModule.forFeature([TransactionEntity])],
+  imports: [TypeOrmModule.forFeature([TransactionEntity]), CacheModule, AuthModule],
   controllers: [TransactionsController],
   providers: [TransactionsService],
   exports: [TransactionsService],

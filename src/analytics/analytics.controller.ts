@@ -43,15 +43,4 @@ export class AnalyticsController {
     const sinceDate = since ? new Date(since) : new Date(0);
     return this.service.getCategoryBreakdown(userId, asset, sinceDate);
   }
-
-  /**
-   * GET /analytics/budget-vs-actual
-   * Returns per-budget variance comparing budgeted amounts to actual spend.
-   */
-  @UseGuards(JwtAuthGuard)
-  @Get('budget-vs-actual')
-  async getBudgetVsActual(@Req() req: any) {
-    const userId = req.user.sub;
-    return this.service.getBudgetVsActual(userId);
-  }
 }

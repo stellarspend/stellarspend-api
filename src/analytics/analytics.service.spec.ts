@@ -1,11 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { AnalyticsService } from './analytics.service';
 import { TransactionEntity } from '../transactions/entities/transaction.entity';
+import { CacheService } from '../cache/cache.service';
 import { BudgetEntity } from '../budgets/entities/budget.entity';
 
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
+  let cacheService: { get: jest.Mock; set: jest.Mock };
   let txRepo: any;
   let budgetRepo: any;
 
@@ -23,6 +26,8 @@ describe('AnalyticsService', () => {
   };
 
   beforeEach(async () => {
+    cacheService = { get: jest.fn(), set: jest.fn() };
+
     txRepo = {
       createQueryBuilder: jest.fn(() => ({ ...mockQueryBuilder })),
     };
@@ -35,6 +40,7 @@ describe('AnalyticsService', () => {
         AnalyticsService,
         { provide: getRepositoryToken(TransactionEntity), useValue: txRepo },
         { provide: getRepositoryToken(BudgetEntity), useValue: budgetRepo },
+        { provide: CacheService, useValue: cacheService },
       ],
     }).compile();
 
@@ -77,6 +83,33 @@ describe('AnalyticsService', () => {
       await service.getSpendingTrend('user-1', 'USDC');
 
       expect(qb.limit).toHaveBeenCalledWith(8);
+    });
+
+    it('returns cached trend without querying the DB on a cache hit', async () => {
+      cacheService.get.mockResolvedValue(
+        [{ week: '2026-08-01', total: '100' }] as never,
+      );
+
+      const result = await service.getSpendingTrend('user1', 'XLM', 12);
+
+      expect(result).toEqual([{ week: '2026-08-01', total: '100' }]);
+      expect(txRepo.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
+    it('runs the aggregation query and caches the result on a cache miss', async () => {
+      cacheService.get.mockResolvedValue(null as never);
+      const qb = txRepo.createQueryBuilder();
+      qb.getRawMany.mockResolvedValue([{ week: '2026-08-01', total: '250' }]);
+
+      const result = await service.getSpendingTrend('user1', 'XLM', 12);
+
+      expect(qb.getRawMany).toHaveBeenCalled();
+      expect(cacheService.set).toHaveBeenCalledWith(
+        'analytics:trend:user1:XLM:12',
+        [{ week: '2026-08-01', total: '250' }],
+        300,
+      );
+      expect(result).toEqual([{ week: '2026-08-01', total: '250' }]);
     });
   });
 

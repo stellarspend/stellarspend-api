@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TransactionEntity } from '../transactions/entities/transaction.entity';
+import { CacheService } from '../cache/cache.service';
 import { BudgetEntity } from '../budgets/entities/budget.entity';
+
+const TREND_TTL_SECONDS = 300;
 
 export interface SpendingTrendRow {
   week: string;
@@ -30,6 +33,7 @@ export class AnalyticsService {
     private readonly transactionsRepository: Repository<TransactionEntity>,
     @InjectRepository(BudgetEntity)
     private readonly budgetsRepository: Repository<BudgetEntity>,
+    private readonly cacheService: CacheService,
   ) {}
 
   /** Reports module availability for operations and smoke tests. */
@@ -40,13 +44,21 @@ export class AnalyticsService {
   /**
    * Groups spending into weekly buckets using PostgreSQL date_trunc('week').
    * Returns the most recent `weeks` weeks with aggregated totals.
+   * Cached for TREND_TTL_SECONDS to avoid re-running the aggregation on repeat calls.
    */
   async getSpendingTrend(
     userId: string,
     asset: string,
     weeks: number = 8,
   ): Promise<SpendingTrendRow[]> {
-    return this.transactionsRepository
+    const cacheKey = `analytics:trend:${userId}:${asset}:${weeks}`;
+
+    const cached = await this.cacheService.get<SpendingTrendRow[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const rows = await this.transactionsRepository
       .createQueryBuilder('t')
       .select("date_trunc('week', t.\"createdAt\")", 'week')
       .addSelect('SUM(t.amount)', 'total')
@@ -56,6 +68,9 @@ export class AnalyticsService {
       .orderBy('week', 'DESC')
       .limit(weeks)
       .getRawMany<SpendingTrendRow>();
+
+    await this.cacheService.set(cacheKey, rows, TREND_TTL_SECONDS);
+    return rows;
   }
 
   /**

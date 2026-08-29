@@ -10,11 +10,18 @@ exports.WalletModule = void 0;
 const common_1 = require("@nestjs/common");
 const wallet_controller_1 = require("./wallet.controller");
 const wallet_service_1 = require("./wallet.service");
+const cache_module_1 = require("../cache/cache.module");
+const blockchain_module_1 = require("../blockchain/blockchain.module");
 /** Registers the wallet feature. */
 let WalletModule = class WalletModule {
 };
 exports.WalletModule = WalletModule;
 exports.WalletModule = WalletModule = __decorate([
-    (0, common_1.Module)({ controllers: [wallet_controller_1.WalletController], providers: [wallet_service_1.WalletService], exports: [wallet_service_1.WalletService] })
+    (0, common_1.Module)({
+        imports: [cache_module_1.CacheModule, blockchain_module_1.BlockchainModule],
+        controllers: [wallet_controller_1.WalletController],
+        providers: [wallet_service_1.WalletService],
+        exports: [wallet_service_1.WalletService],
+    })
 ], WalletModule);
 //# sourceMappingURL=wallet.module.js.map

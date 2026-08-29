@@ -1,8 +1,9 @@
-/** Provides the health application capability. */
+import { CacheService } from '../cache/cache.service';
 export declare class HealthService {
-    /** Returns a stable service health payload for this capability. */
-    status(): {
-        module: string;
+    private readonly cacheService;
+    constructor(cacheService: CacheService);
+    check(): Promise<{
         status: string;
-    };
+        redis: 'ok' | 'degraded';
+    }>;
 }
